@@ -1,6 +1,6 @@
 import pygame
 
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, BLUE_WALL
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, BLUE_WALL, MAP_WIDTH, MAP_HEIGHT
 from entity.weapon import LaserWeapon 
 
 class Renderer:
@@ -18,18 +18,17 @@ class Renderer:
 
     def init_map_surface(self):
         # временная сетка
-        for x in range(-4000, 4000, 50):
+        surface_width = MAP_WIDTH * TILE_SIZE
+        surface_height = MAP_HEIGHT * TILE_SIZE
+
+        for x in range(0, surface_width, 50):
             pygame.draw.line(self.map_surface, (100, 50, 150), (x, 0), (x, 4000))
-        for y in range(-4000, 4000, 50):
+        for y in range(0, surface_height, 50):
             pygame.draw.line(self.map_surface, (100, 50, 150), (0, y), (4000, y))
 
         """ стены """
-        for y, row in enumerate(self.walls):
-            for x, tile in enumerate(row):
-                if tile == 1:
-                    rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                    self.walls.append(rect)
-                    pygame.draw.rect(self.map_surface, BLUE_WALL, rect)
+        for wall in self.walls:
+            pygame.draw.rect(self.map_surface, BLUE_WALL, wall)
 
 
     def draw_hp(self):
@@ -73,7 +72,7 @@ class Renderer:
     def draw(self, camera_x, camera_y):
         """ карта """
         self.screen.fill("purple")
-        self.screen.blit(self.map_surface, (-1000-camera_x, -1000-camera_y))
+        self.screen.blit(self.map_surface, (-camera_x, -camera_y))
 
         """ ентити """
         self.player.draw(self.screen, camera_x, camera_y)

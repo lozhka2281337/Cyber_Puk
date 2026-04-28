@@ -3,6 +3,7 @@ import pygame
 from entity.enemy import Enemy
 from entity.player import Player
 from entity.weapon import LaserWeapon 
+from dungeon.dungeon_generation import DungeonGeneration as dg
 
 from renderer import Renderer
 from handler import Handler
@@ -30,16 +31,19 @@ class Game:
         self.enemies = []
         self.walls = []
 
-        self.player = Player(0, 0)
+        self.dungeon_generator = dg(self.walls)
+        start_x, start_y = self.dungeon_generator.get_start_coord()
+
+        self.player = Player(start_x, start_y)
         self.renderer = Renderer(self.screen, self.player, self.walls, self.bullets, self.enemies)
         self.handler = Handler(self.player, self.walls, self.bullets, self.enemies)
 
         self.running = True
 
         """ потом убрать"""
-        self.enemies.append(Enemy(100, 100))
-        self.enemies.append(Enemy(-200, 100))
-        self.enemies.append(Enemy(-500, 100))
+        #self.enemies.append(Enemy(100, 100))
+        #self.enemies.append(Enemy(-200, 100))
+        #self.enemies.append(Enemy(-500, 100))
         #self.walls.append(pygame.Rect(100, -250, 50, 500))
         #self.walls.append(pygame.Rect(-200, -250, 50, 500))
         #self.walls.append(pygame.Rect(-500, -250, 50, 500))

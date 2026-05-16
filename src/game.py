@@ -31,21 +31,24 @@ class Game:
         self.world = World()
 
         self.dungeon_generator = dg(self.world)
-        start_x, start_y = self.dungeon_generator.get_start_coord()
+        player_x, player_y = self.dungeon_generator.get_start_coord()
 
-        self.player = Player(start_x, start_y)
+        self.player = Player(player_x, player_y)
         self.renderer = Renderer(self.screen, self.player, self.world)
         self.handler = Handler(self.player, self.world)
 
         self.running = True
         self.shake_intensity = 0 
 
+        self.spawn_enemies(player_x, player_y)
+
+    def spawn_enemies(self, player_x, player_y):
         # УМНЫЙ СПАВН ВРАГОВ
         safe_spots = self.dungeon_generator.get_random_floor_coords(20)
         
         for i, (spot_x, spot_y) in enumerate(safe_spots):
-            dist_x = abs(spot_x - start_x)
-            dist_y = abs(spot_y - start_y)
+            dist_x = abs(spot_x - player_x)
+            dist_y = abs(spot_y - player_y)
             
             if dist_x > 300 or dist_y > 300:
                 spawn_x = spot_x + (TILE_SIZE - ENEMY_SIZE) // 2
@@ -86,6 +89,28 @@ class Game:
         self.handler.process_player_damage(self)
         self.player.process_weapon_damage(self.world.enemies, self.world.walls)
 
+    def draw(self, dt):
+        # СИСТЕМА ТРЯСКИ ЭКРАНА (SCREEN SHAKE) 
+        if self.shake_intensity > 0:
+            self.shake_intensity -= 50 * dt 
+            if self.shake_intensity < 0: self.shake_intensity = 0
+
+        current_weapon = self.player.inventory[self.player.current_weapon_idx]
+        if hasattr(current_weapon, 'is_firing') and current_weapon.is_firing:
+            self.shake_intensity = max(self.shake_intensity, 3.0) 
+
+        final_cam_x = self.player.rect.x + 16 - SCREEN_WIDTH / 2
+        final_cam_y = self.player.rect.y + 16 - SCREEN_HEIGHT / 2
+
+        if self.shake_intensity > 0:
+            final_cam_x += random.uniform(-self.shake_intensity, self.shake_intensity)
+            final_cam_y += random.uniform(-self.shake_intensity, self.shake_intensity)
+
+        draw_cam_x = int(final_cam_x)
+        draw_cam_y = int(final_cam_y)
+        
+        self.renderer.draw(draw_cam_x, draw_cam_y)
+
     """ главная функция """
 
     def run(self):
@@ -100,24 +125,5 @@ class Game:
             
             self.handler.process_events(self, base_cam_x, base_cam_y)
             self.update(dt)
-
-            # СИСТЕМА ТРЯСКИ ЭКРАНА (SCREEN SHAKE) 
-            if self.shake_intensity > 0:
-                self.shake_intensity -= 50 * dt 
-                if self.shake_intensity < 0: self.shake_intensity = 0
-
-            current_weapon = self.player.inventory[self.player.current_weapon_idx]
-            if hasattr(current_weapon, 'is_firing') and current_weapon.is_firing:
-                self.shake_intensity = max(self.shake_intensity, 3.0) 
-
-            final_cam_x = self.player.rect.x + 16 - SCREEN_WIDTH / 2
-            final_cam_y = self.player.rect.y + 16 - SCREEN_HEIGHT / 2
-
-            if self.shake_intensity > 0:
-                final_cam_x += random.uniform(-self.shake_intensity, self.shake_intensity)
-                final_cam_y += random.uniform(-self.shake_intensity, self.shake_intensity)
-
-            draw_cam_x = int(final_cam_x)
-            draw_cam_y = int(final_cam_y)
+            self.draw(dt)
             
-            self.renderer.draw(draw_cam_x, draw_cam_y)

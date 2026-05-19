@@ -6,9 +6,9 @@ from entity.player import Player
 from entity.weapon import LaserWeapon 
 from dungeon.dungeon_generation import DungeonGeneration as dg
 
-from world import World
-from renderer import Renderer
-from handler import Handler
+from core.world import World
+from core.renderer import Renderer
+from core.handler import Handler
 
 from config import (SCREEN_WIDTH, SCREEN_HEIGHT, MAP_WIDTH, MAP_HEIGHT, 
                     SPAWN_ENEMY_EVENT, SPAWN_ENEMY_TIME, 

@@ -1,12 +1,12 @@
 import random
 import pygame
 
-from config import TILE_SIZE, ROWS, COLS#, MAP_WIDTH, MAP_HEIGHT
+from config import TILE_SIZE, ROWS, COLS, MAP_WIDTH, MAP_HEIGHT
 
-MAP_WIDTH = 100
-MAP_HEIGHT = 100
+#MAP_WIDTH = 100
+#MAP_HEIGHT = 100
 
-# ГЕНЕРАЦИЯ УРОВНЯ (
+"""  """
 
 class DungeonGeneration:
     def __init__(self, world, n=4000):

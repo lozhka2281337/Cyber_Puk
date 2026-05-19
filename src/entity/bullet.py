@@ -100,7 +100,6 @@ class Grenade(Bullet):
         
         pygame.draw.ellipse(surface, grenade_body_color, offset_rect)
 
-# НОВЫЙ КЛАСС: Эффект Искр для оружия
 class SparkEffect:
     def __init__(self, x, y, color):
         self.pos = pygame.math.Vector2(x, y)

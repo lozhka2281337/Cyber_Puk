@@ -2,7 +2,7 @@ import pygame
 import math
 
 from .weapon import GunWeapon, LaserWeapon, MeleeWeapon, GrenadeWeapon
-from animation import Animation 
+from core.animation import Animation 
 
 from config import PLAYER_SPEED, PLAYER_HP, PLAYER_SIZE, PLAYER_COLOR
 

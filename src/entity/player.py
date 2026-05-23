@@ -1,7 +1,7 @@
 import pygame
 import math
 
-from .weapon import GunWeapon, LaserWeapon, MeleeWeapon, GrenadeWeapon
+from .weapon import Inventory 
 from core.animation import Animation 
 
 from config import PLAYER_SPEED, PLAYER_HP, PLAYER_SIZE, PLAYER_COLOR
@@ -16,28 +16,29 @@ class Player:
 
         self.invulnerable_timer = 0 # таймер для щита бессмертия, появляющийся после получения урона
         
-        self.inventory = [
-            GunWeapon("Scanner", 50, 20, 10, 400, 800, (255, 255, 0)), 
-            GunWeapon("Firewall", 50, 20, 5, 1100, 550, (255, 100, 0), spread=15, count=5, b_range=280), 
-            LaserWeapon("Defrag", 100, 20, 1, 2500, duration=800, beam_width=14, color=(0, 255, 255), charge_time=400),
-            MeleeWeapon("USB-Katana", 150, 20, 1, 400, reach=70, arc_degrees=140, color=(255, 255, 255)),
-            GrenadeWeapon("Zip-Bomb", 200, 20, 1, 1000, throw_speed=400, blast_radius=70, fuse_time=1000, max_range=350)
-        ]
-        
-        self.current_weapon_idx = 0
+        self.inventory = Inventory()
 
         # Система анимации 
         self.anim = Animation("assets/main-Sheet.png", columns=6, speed=0.07, scale=1.5)
         # По умолчанию будем смотреть вправо, так как парни на лево не ходят.  
         self.flip_x = True 
     
+    def switch_weapon(self, forward: bool):
+        if forward:
+            self.inventory.next_weapon()
+        else:
+            self.inventory.prev_weapon()
+
+    def check_enemy_collisions(self, enemies):
+        for enemy in enemies:
+            if self.rect.colliderect(enemy.rect):
+                self.get_damage(enemy.damage)
+
     def shot(self, camera_x: int, camera_y: int, world) -> None:
-        current_weapon = self.inventory[self.current_weapon_idx]
-        current_weapon.shot(self.pos, camera_x, camera_y, world)
+        self.inventory.get_current().shot(self.pos, camera_x, camera_y, world)
 
     def process_weapon_damage(self, enemies, walls) -> None:
-        current_weapon = self.inventory[self.current_weapon_idx]
-        current_weapon.process_damage(enemies, self.rect, walls)
+        self.inventory.get_current().process_damage(enemies, self.rect, walls)
         
     def get_damage(self, damage=1):
         if self.invulnerable_timer <= 0: 
@@ -54,7 +55,7 @@ class Player:
         if direction.magnitude() > 0:
             direction = direction.normalize()
 
-        current_weapon = self.inventory[self.current_weapon_idx]
+        current_weapon = self.inventory.get_current()
         current_speed = self.speed
         
         if getattr(current_weapon, 'is_firing', False) or getattr(current_weapon, 'is_charging', False):
@@ -78,7 +79,7 @@ class Player:
                 elif direction.y < 0: self.rect.top = wall.bottom         
                 self.pos.y = float(self.rect.y)
 
-    def update(self, dt: float, walls: list): 
+    def update(self, dt: float, world): 
         keys = pygame.key.get_pressed()
         direction = pygame.math.Vector2(0, 0)
 
@@ -93,7 +94,9 @@ class Player:
         elif direction.x > 0:
             self.flip_x = True 
 
-        self.movement(direction, dt, walls)
+        self.movement(direction, dt, world.walls)
+        self.check_enemy_collisions(world.enemies)
+        self.inventory.update_all()
 
         # Обновление кадров 
         if direction.magnitude() > 0:

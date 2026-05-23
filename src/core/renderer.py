@@ -1,9 +1,5 @@
 import pygame
-import math
-
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, BLUE_WALL, MAP_WIDTH, MAP_HEIGHT, MELEE, DEFRAG
-
-from entity.weapon import LaserWeapon
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, BLUE_WALL, MAP_WIDTH, MAP_HEIGHT
 
 class Renderer:
     def __init__(self, screen, player, world):
@@ -57,71 +53,23 @@ class Renderer:
         start_x = SCREEN_WIDTH - 220
         start_y = SCREEN_HEIGHT - 80
         
-        for i in range(len(self.player.inventory)):
-            weapon = self.player.inventory[i]
-            is_active = (i == self.player.current_weapon_idx)
-            
-            offset_y = (i - self.player.current_weapon_idx) * -35
-            
+        for i in range(len(self.player.inventory.weapons)):
+            weapon = self.player.inventory.weapons[i]
+            is_active = (i == self.player.inventory.current_idx)  
+            offset_y = (i - self.player.inventory.current_idx) * -35
             w_color = getattr(weapon, 'b_color', getattr(weapon, 'color', (255, 255, 255)))
 
             if is_active:
                 text_surf = self.FONT.render(f"> {weapon.name}", True, w_color)
             else:
                 text_surf = self.FONT.render(weapon.name, True, (120, 120, 120))
-                text_surf.set_alpha(150) 
-            
+                text_surf.set_alpha(150)          
             self.screen.blit(text_surf, (start_x, start_y + offset_y))
 
-    def draw_laser(self, weapon, camera_x, camera_y):
-        start_p = (self.player.rect.centerx - camera_x, self.player.rect.centery - camera_y)
-            
-        if weapon.is_charging:
-            pulse = math.sin(pygame.time.get_ticks() * 0.03) * 5
-            radius = int(8 + pulse)
-            pygame.draw.circle(self.screen, weapon.color, start_p, radius)
-            pygame.draw.circle(self.screen, (255, 255, 255), start_p, max(1, radius - 4))
-            
-        elif weapon.is_firing:
-            world_end = weapon.get_laser_end_pos(self.player.rect.center, self.walls)
-            end_p = (world_end.x - camera_x, world_end.y - camera_y)
-
-            pygame.draw.line(self.screen, weapon.color, start_p, end_p, weapon.beam_width)
-            pygame.draw.line(self.screen, (255, 255, 255), start_p, end_p, max(1, weapon.beam_width // 3))
-            
-            spark_radius = int(weapon.beam_width * 1.5 + math.sin(pygame.time.get_ticks() * 0.05) * 3)
-            pygame.draw.circle(self.screen, weapon.color, (int(end_p[0]), int(end_p[1])), spark_radius)
-            pygame.draw.circle(self.screen, (255, 255, 255), (int(end_p[0]), int(end_p[1])), max(2, spark_radius // 2))
-
-    def draw_melee(self, weapon, camera_x, camera_y):
-        start_p = (self.player.rect.centerx - camera_x, self.player.rect.centery - camera_y)
-            
-        time_left = weapon.swing_timer - pygame.time.get_ticks()
-        alpha = max(0, int(255 * (time_left / weapon.swing_duration)))
-        
-        if alpha > 0:
-            swing_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-            
-            points = [start_p]
-            start_angle = math.radians(weapon.locked_angle - weapon.arc_degrees / 2)
-            end_angle = math.radians(weapon.locked_angle + weapon.arc_degrees / 2)
-            
-            steps = 10
-            for i in range(steps + 1):
-                angle = start_angle + (end_angle - start_angle) * (i / steps)
-                x = start_p[0] + math.cos(angle) * weapon.reach
-                y = start_p[1] + math.sin(angle) * weapon.reach
-                points.append((x, y))
-                
-            pygame.draw.polygon(swing_surf, (*weapon.color, alpha // 2), points)
-            pygame.draw.polygon(swing_surf, (*weapon.color, alpha), points, 2)
-            
-            self.screen.blit(swing_surf, (0, 0))
-
-    def draw_weapon(self, camera_x, camera_y):
-        weapon = self.player.inventory[self.player.current_weapon_idx]
-        if weapon.name == DEFRAG: self.draw_laser(weapon, camera_x, camera_y)
-        elif weapon.name == MELEE and weapon.is_swinging: self.draw_melee(weapon, camera_x, camera_y)
+    def draw_weapon(self, camera_x, camera_y):       
+        weapon = self.player.inventory.get_current()
+        if hasattr(weapon, 'draw'):
+            weapon.draw(self.screen, camera_x, camera_y, self.player.rect, self.walls)
 
     def draw(self, camera_x, camera_y):
         """ карта """

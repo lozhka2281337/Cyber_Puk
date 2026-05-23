@@ -1,19 +1,13 @@
 import pygame
-import random 
-
 from entity.enemy_type import Swarm, Tank, Shooter
 from entity.player import Player
-from entity.weapon import LaserWeapon 
 from dungeon.dungeon_generation import DungeonGeneration as dg
-
 from core.world import World
 from core.renderer import Renderer
 from core.handler import Handler
-
+from core.camera import Camera 
 from config import (SCREEN_WIDTH, SCREEN_HEIGHT, MAP_WIDTH, MAP_HEIGHT, 
-                    SPAWN_ENEMY_EVENT, SPAWN_ENEMY_TIME, 
-                    FPS, SHOT_DELAY, BLUE_WALL, TILE_SIZE, ENEMY_SIZE)
-
+                    FPS, TILE_SIZE, ENEMY_SIZE)
 
 class Game:
     def __init__(self):
@@ -22,24 +16,19 @@ class Game:
 
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.FONT = pygame.font.SysFont("Arial", 32, bold = True)
-
         self.clock = pygame.time.Clock()
 
         self.new_game()
 
     def new_game(self):
         self.world = World()
-
         self.dungeon_generator = dg(self.world)
         player_x, player_y = self.dungeon_generator.get_start_coord()
-
         self.player = Player(player_x, player_y)
         self.renderer = Renderer(self.screen, self.player, self.world)
         self.handler = Handler(self.player, self.world)
-
+        self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.running = True
-        self.shake_intensity = 0 
-
         self.spawn_enemies(player_x, player_y)
 
     def spawn_enemies(self, player_x, player_y):
@@ -68,62 +57,43 @@ class Game:
         self.new_game()
 
     def update(self, dt: float):
-        self.player.update(dt, self.world.walls)
-
-        for weapon in self.player.inventory:
-            weapon.update()
+        self.player.update(dt, self.world)
 
         for bullet in self.world.bullets:
             bullet.update(dt)
-
         for grenade in self.world.grenades:
             grenade.update(dt)
-
         for effect in self.world.effects:
             effect.update(dt)
-
         for enemy in self.world.enemies:
             enemy.update(dt, self.player, self.world)
 
-        self.handler.process_elements(self)
-        self.handler.process_player_damage(self)
+        self.handler.process_elements(self.camera)
         self.player.process_weapon_damage(self.world.enemies, self.world.walls)
-
+        self.world.enemies[:] = [enemy for enemy in self.world.enemies if enemy.hp > 0]
+        
+        if self.player.hp <= 0:
+            self.death_player()
     def draw(self, dt):
         # СИСТЕМА ТРЯСКИ ЭКРАНА (SCREEN SHAKE) 
-        if self.shake_intensity > 0:
-            self.shake_intensity -= 50 * dt 
-            if self.shake_intensity < 0: self.shake_intensity = 0
-
-        current_weapon = self.player.inventory[self.player.current_weapon_idx]
+        current_weapon = self.player.inventory.get_current()
         if hasattr(current_weapon, 'is_firing') and current_weapon.is_firing:
-            self.shake_intensity = max(self.shake_intensity, 3.0) 
+            self.camera.add_shake(3.0) 
 
-        final_cam_x = self.player.rect.x + 16 - SCREEN_WIDTH / 2
-        final_cam_y = self.player.rect.y + 16 - SCREEN_HEIGHT / 2
-
-        if self.shake_intensity > 0:
-            final_cam_x += random.uniform(-self.shake_intensity, self.shake_intensity)
-            final_cam_y += random.uniform(-self.shake_intensity, self.shake_intensity)
-
-        draw_cam_x = int(final_cam_x)
-        draw_cam_y = int(final_cam_y)
+        cam_x, cam_y = self.camera.get_offset(self.player.rect, dt)
         
-        self.renderer.draw(draw_cam_x, draw_cam_y)
+        self.renderer.draw(cam_x, cam_y)
 
     """ главная функция """
 
     def run(self):
         while self.running:
             dt = self.clock.tick(FPS) / 1000.0  
-            
             if dt > 0.05: 
                 dt = 0.05
 
-            base_cam_x = int(self.player.rect.x + 16 - SCREEN_WIDTH / 2)
-            base_cam_y = int(self.player.rect.y + 16 - SCREEN_HEIGHT / 2)
+            cam_x, cam_y = self.camera.get_offset(self.player.rect, dt)
             
-            self.handler.process_events(self, base_cam_x, base_cam_y)
+            self.handler.process_events(self, cam_x, cam_y)
             self.update(dt)
             self.draw(dt)
-            

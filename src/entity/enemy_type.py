@@ -61,5 +61,4 @@ class Shooter(Enemy):
         new_bullet = Bullet(self.rect.centerx, self.rect.centery, 
                             player.rect.centerx, player.rect.centery, 
                             400, (255, 50, 50), self.damage)
-        new_bullet.is_enemy_bullet = True 
         bullets.append(new_bullet)

@@ -18,6 +18,8 @@ class Weapon:
         pass
     def process_damage(self, enemies, player_rect, walls):
         pass
+    def draw(self, surface, camera_x, camera_y, player_rect, walls):
+        pass
 
 
 # НАСЛЕДНИК: ОГНЕСТРЕЛЬНОЕ ОРУЖИЕ (Пистолет, Дробовик)
@@ -62,11 +64,9 @@ class LaserWeapon(Weapon):
         self.beam_width = beam_width  
         self.color = color            
         self.charge_time = charge_time 
-        
         self.is_charging = False
         self.is_firing = False
         self.active_timer = 0
-        
         self.locked_dir = pygame.math.Vector2(0, 0)
 
     def shot(self, player_pos, camera_x: float, camera_y: float, world) -> None:
@@ -133,7 +133,30 @@ class LaserWeapon(Weapon):
                     
                     enemy.knockback += self.locked_dir * 30 
                     
-                    if enemy.hp <= 0: enemies.remove(enemy)
+                    # УДАЛЕНА ПРОВЕРКА НА СМЕРТЬ ВРАГА
+
+    def draw(self, surface, camera_x, camera_y, player_rect, walls):
+        if not self.is_charging and not self.is_firing: 
+            return
+            
+        start_p = (player_rect.centerx - camera_x, player_rect.centery - camera_y)
+            
+        if self.is_charging:
+            pulse = math.sin(pygame.time.get_ticks() * 0.03) * 5
+            radius = int(8 + pulse)
+            pygame.draw.circle(surface, self.color, start_p, radius)
+            pygame.draw.circle(surface, (255, 255, 255), start_p, max(1, radius - 4))
+            
+        elif self.is_firing:
+            world_end = self.get_laser_end_pos(player_rect.center, walls)
+            end_p = (world_end.x - camera_x, world_end.y - camera_y)
+
+            pygame.draw.line(surface, self.color, start_p, end_p, self.beam_width)
+            pygame.draw.line(surface, (255, 255, 255), start_p, end_p, max(1, self.beam_width // 3))
+            
+            spark_radius = int(self.beam_width * 1.5 + math.sin(pygame.time.get_ticks() * 0.05) * 3)
+            pygame.draw.circle(surface, self.color, (int(end_p[0]), int(end_p[1])), spark_radius)
+            pygame.draw.circle(surface, (255, 255, 255), (int(end_p[0]), int(end_p[1])), max(2, spark_radius // 2))
 
 
 # НАСЛЕДНИК: БЛИЖНИЙ БОЙ (USB-Katana)
@@ -143,7 +166,6 @@ class MeleeWeapon(Weapon):
         self.reach = reach
         self.arc_degrees = arc_degrees
         self.color = color
-        
         self.is_swinging = False
         self.swing_duration = 200
         self.swing_timer = 0
@@ -157,7 +179,6 @@ class MeleeWeapon(Weapon):
             return
 
         self.last_shot_time = current_time
-        
         self.is_swinging = True
         self.swing_timer = current_time + self.swing_duration
         self.hit_enemies = []
@@ -197,9 +218,37 @@ class MeleeWeapon(Weapon):
                         push_dir = enemy_pos - start_pos
                         if push_dir.magnitude() > 0:
                             enemy.knockback += push_dir.normalize() * 1200
-                        
-                        if enemy.hp <= 0: enemies.remove(enemy)
+
                         self.hit_enemies.append(enemy)
+
+    def draw(self, surface, camera_x, camera_y, player_rect, walls):
+        if not self.is_swinging: 
+            return
+            
+        start_p = (player_rect.centerx - camera_x, player_rect.centery - camera_y)
+            
+        time_left = self.swing_timer - pygame.time.get_ticks()
+        alpha = max(0, int(255 * (time_left / self.swing_duration)))
+        
+        if alpha > 0:
+            from config import SCREEN_WIDTH, SCREEN_HEIGHT
+            swing_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+            
+            points = [start_p]
+            start_angle = math.radians(self.locked_angle - self.arc_degrees / 2)
+            end_angle = math.radians(self.locked_angle + self.arc_degrees / 2)
+            
+            steps = 10
+            for i in range(steps + 1):
+                angle = start_angle + (end_angle - start_angle) * (i / steps)
+                x = start_p[0] + math.cos(angle) * self.reach
+                y = start_p[1] + math.sin(angle) * self.reach
+                points.append((x, y))
+                
+            pygame.draw.polygon(swing_surf, (*self.color, alpha // 2), points)
+            pygame.draw.polygon(swing_surf, (*self.color, alpha), points, 2)
+            
+            surface.blit(swing_surf, (0, 0))
 
 
 # НАСЛЕДНИК: ГРАНАТЫ (Zip-Bomb)
@@ -234,3 +283,27 @@ class GrenadeWeapon(Weapon):
         )
 
         world.grenades.append(grenade) 
+
+class Inventory:
+    def __init__(self):
+        self.weapons = [
+            GunWeapon("Scanner", 50, 20, 10, 400, 800, (255, 255, 0)), 
+            GunWeapon("Firewall", 50, 20, 5, 1100, 550, (255, 100, 0), spread=15, count=5, b_range=280), 
+            LaserWeapon("Defrag", 100, 20, 1, 2500, duration=800, beam_width=14, color=(0, 255, 255), charge_time=400),
+            MeleeWeapon("USB-Katana", 150, 20, 1, 400, reach=70, arc_degrees=140, color=(255, 255, 255)),
+            GrenadeWeapon("Zip-Bomb", 200, 20, 1, 1000, throw_speed=400, blast_radius=70, fuse_time=1000, max_range=350)
+        ]
+        self.current_idx = 0
+
+    def get_current(self):
+        return self.weapons[self.current_idx]
+
+    def next_weapon(self):
+        self.current_idx = (self.current_idx + 1) % len(self.weapons)
+
+    def prev_weapon(self):
+        self.current_idx = (self.current_idx - 1) % len(self.weapons)
+        
+    def update_all(self):
+        for weapon in self.weapons:
+            weapon.update()

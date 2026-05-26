@@ -4,7 +4,7 @@ from config import ENEMY_SIZE
 class Enemy:
     def __init__(self, x: int, y: int, hp: int, speed: int, color: tuple):
         self.pos = pygame.math.Vector2(x, y)
-        self.rect = pygame.Rect(x, y, ENEMY_SIZE, ENEMY_SIZE)       
+        self.rect = pygame.Rect(x, y, ENEMY_SIZE, ENEMY_SIZE)
         self.hp = hp
         self.speed = speed
         self.color = color
@@ -60,7 +60,8 @@ class Enemy:
         
         if sees_player: 
             direction = pygame.math.Vector2(player.rect.centerx - self.rect.centerx, 
-                                            player.rect.centery - self.rect.centery)       
+                                            player.rect.centery - self.rect.centery)
+            
         if direction.magnitude() > 0:
             direction = direction.normalize()
             
@@ -69,3 +70,37 @@ class Enemy:
     def draw(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
         offset_rect = self.rect.move(-cam_x, -cam_y)
         pygame.draw.rect(surface, self.color, offset_rect)
+
+
+class AnimatedEnemy(Enemy):
+    def __init__(self, x: int, y: int, hp: int, speed: int, color: tuple):
+        super().__init__(x, y, hp, speed, color)
+        self.anim_left = None
+        self.anim_right = None
+        self.current_anim = None
+
+    def update(self, dt: float, player, world) -> None:
+        super().update(dt, player, world)
+        
+        if player.rect.centerx < self.rect.centerx:
+            self.current_anim = self.anim_left
+        else:
+            self.current_anim = self.anim_right
+            
+        if self.is_moving:
+            self.current_anim.update(dt)
+        else:
+            self.current_anim.current_idx = 0
+
+    def draw(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
+        if not self.current_anim:
+            super().draw(surface, cam_x, cam_y)
+            return
+            
+        frame = self.current_anim.get_frame()
+        screen_x = self.rect.x - cam_x
+        screen_y = self.rect.y - cam_y 
+        center_x = screen_x + self.rect.width // 2
+        center_y = screen_y + self.rect.height // 2
+        frame_rect = frame.get_rect(center=(center_x, center_y)) 
+        surface.blit(frame, frame_rect)

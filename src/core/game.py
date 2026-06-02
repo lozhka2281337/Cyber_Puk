@@ -2,17 +2,14 @@ import pygame
 
 from dungeon.dungeon_generation import DungeonGeneration as dg
 from dungeon.BSP.BSP_generation import BSPGeneration as BSP
-
-from entity.enemy_type import Swarm, Tank, Shooter
 from entity.player import Player
-
 from core.world import World
 from core.renderer import Renderer
 from core.handler import Handler
 from core.camera import Camera 
-
+from core.spawner import Spawner
 from config import (SCREEN_WIDTH, SCREEN_HEIGHT, MAP_WIDTH, MAP_HEIGHT, 
-                    FPS, TILE_SIZE, ENEMY_SIZE)
+                    FPS, TILE_SIZE, ENEMY_SIZE, PLAYER_HP) 
 
 class Game:
     def __init__(self):
@@ -35,36 +32,17 @@ class Game:
         self.player = Player(player_x, player_y)
         self.renderer = Renderer(self.screen, self.player, self.world)
         self.handler = Handler(self.player, self.world)
-        self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-        
-        self.spawn_enemies(player_x, player_y)
+        self.camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)     
+        self.spawner = Spawner(self.world, self.dungeon_generator, self.player)
+        self.spawner.spawn_initial()         
         self.running = True
 
-    def spawn_enemies(self, player_x, player_y):
-        safe_spots = self.dungeon_generator.get_random_floor_coords(20)
-        
-        for i, (spot_x, spot_y) in enumerate(safe_spots):
-            dist_x = abs(spot_x - player_x)
-            dist_y = abs(spot_y - player_y)
-            
-            if dist_x > 300 or dist_y > 300:
-                spawn_x = spot_x + (TILE_SIZE - ENEMY_SIZE) // 2
-                spawn_y = spot_y + (TILE_SIZE - ENEMY_SIZE) // 2
-                
-                roll = i % 4
-                if roll == 0:
-                    self.world.enemies.append(Tank(spawn_x, spawn_y))
-                elif roll == 1:
-                    self.world.enemies.append(Shooter(spawn_x, spawn_y)) 
-                else:
-                    self.world.enemies.append(Swarm(spawn_x, spawn_y))
-                    
     def death_player(self):
         self.renderer.draw_death_screen()
         self.new_game()
 
     def update(self, dt: float):
-        self.player.update(dt, self.world)
+        self.player.update(dt, self.world)   
 
         for bullet in self.world.bullets[:]:
             bullet.update(self.world, self.player, dt)
@@ -81,6 +59,12 @@ class Game:
         self.player.process_weapon_damage(self.world.enemies, self.world.walls)
         self.world.enemies[:] = [enemy for enemy in self.world.enemies if enemy.hp > 0]
         
+        for item in self.world.items[:]:
+            if self.player.rect.colliderect(item.rect):
+                if self.player.hp < PLAYER_HP: 
+                    self.player.hp += 1
+                    self.world.items.remove(item)
+
         if self.player.hp <= 0:
             self.death_player()
 
@@ -92,8 +76,6 @@ class Game:
         cam_x, cam_y = self.camera.get_offset(self.player.rect, dt)
         
         self.renderer.draw(cam_x, cam_y)
-
-    """ главная функция """
 
     def run(self):
         while self.running:

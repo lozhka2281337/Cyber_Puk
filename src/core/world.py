@@ -5,6 +5,7 @@ class World:
         self.grenades = []
         self.effects = []
         self.walls = []
+        self.items = []
 
         # матрица карты
         matrix = []

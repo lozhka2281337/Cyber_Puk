@@ -38,7 +38,7 @@ class Shooter(Enemy):
         self.shoot_cooldown = 1500 
 
     # Принимаем пули 
-    def update(self, dt: float, player, world) -> None: 
+    def update(self, world,  player, dt: float) -> None: 
         sees_player = self.check_los(player.rect, world.walls)
         direction = pygame.math.Vector2(0, 0)  
         if sees_player: 

@@ -8,8 +8,8 @@ BLACK = (20, 20, 25)
 WHITE = (255, 255, 255)
 BLUE_WALL = (100, 150, 200)
 
-MAP_WIDTH = 320#640
-MAP_HEIGHT = 240#480
+MAP_WIDTH = 320 // 4
+MAP_HEIGHT = 240 // 4
 
 SPAWN_ENEMY_EVENT = pygame.event.custom_type()
 SPAWN_ENEMY_TIME = 1800
@@ -57,6 +57,13 @@ DEFRAG = "Defrag"
 MELEE = "USB-Katana" 
 ZIP_BOMB = "Zip-Bomb"
 
+
+""" пинг """
+PING_TIMER = 2.0 
+PING_COLOR = (0, 200, 255)
+PING_START_RADIUS = 10
+PING_MAX_RADIUS = 500 
+PING_SPEED = 450
 
 """ враги """
 ENEMY_SIZE = 32

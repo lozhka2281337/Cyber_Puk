@@ -1,7 +1,8 @@
 import random
 import pygame
 
-from config import TILE_SIZE, MAP_WIDTH, MAP_HEIGHT
+import config as cfg
+
 
 """ генерация подземелья через случайное блуждание """
 
@@ -10,20 +11,20 @@ class DungeonGeneration:
         self.n = n
         self.walls = world.walls
 
-        self.dungeon_map = [[1 for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
+        self.dungeon_map = [[1 for _ in range(cfg.MAP_WIDTH)] for _ in range(cfg.MAP_HEIGHT)]
         self.directions = [[0, 1], [1, 0], [-1, 0], [0, -1]]
         
         self._generate_dungeon()
 
     def _generate_dungeon(self):
-        x = random.randint(1, MAP_WIDTH-2)
-        y = random.randint(1, MAP_HEIGHT-2)
+        x = random.randint(1, cfg.MAP_WIDTH-2)
+        y = random.randint(1, cfg.MAP_HEIGHT-2)
 
         steps_made = 0
         while steps_made < self.n:
             dx, dy = random.choice(self.directions)
             
-            if 1 <= x + dx < MAP_WIDTH - 1 and 1 <= y + dy < MAP_HEIGHT - 1:
+            if 1 <= x + dx < cfg.MAP_WIDTH - 1 and 1 <= y + dy < cfg.MAP_HEIGHT - 1:
                 x += dx
                 y += dy
 
@@ -34,27 +35,27 @@ class DungeonGeneration:
         self._create_walls()
 
     def _create_walls(self):
-        for y in range(MAP_HEIGHT):
-            for x in range(MAP_WIDTH):
+        for y in range(cfg.MAP_HEIGHT):
+            for x in range(cfg.MAP_WIDTH):
                 if self.dungeon_map[y][x] == 1:
-                    rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                    rect = pygame.Rect(x * cfg.TILE_SIZE, y * cfg.TILE_SIZE, cfg.TILE_SIZE, cfg.TILE_SIZE)
                     self.walls.append(rect)
             
     def get_start_coord(self):
-        for y in range(MAP_HEIGHT):
-            for x in range(MAP_WIDTH):
+        for y in range(cfg.MAP_HEIGHT):
+            for x in range(cfg.MAP_WIDTH):
                 if self.dungeon_map[y][x] == 0:
-                    return x * TILE_SIZE, y * TILE_SIZE
+                    return x * cfg.TILE_SIZE, y * cfg.TILE_SIZE
                     
-        return TILE_SIZE, TILE_SIZE
+        return cfg.TILE_SIZE, cfg.TILE_SIZE
 
     def get_random_floor_coords(self, count):
         floors = []
         
-        for y in range(MAP_HEIGHT):
-            for x in range(MAP_WIDTH):
+        for y in range(cfg.MAP_HEIGHT):
+            for x in range(cfg.MAP_WIDTH):
                 if self.dungeon_map[y][x] == 0:
-                    floors.append((x * TILE_SIZE, y * TILE_SIZE))
+                    floors.append((x * cfg.TILE_SIZE, y * cfg.TILE_SIZE))
         
         if len(floors) < count:
             return floors

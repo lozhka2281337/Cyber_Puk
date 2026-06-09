@@ -1,9 +1,7 @@
 import pygame
 import random
 
-from config import (MAP_HEIGHT, MAP_WIDTH, TILE_SIZE,
-                    MAX_LEAF_SIZE, SPLIT_BIG_LEAF_RELATIONSHIP
-                    )
+import config as cfg
 
 from .leaf import Leaf
 
@@ -21,25 +19,25 @@ class BSPGeneration:
         self._create_walls()
 
     def get_start_coord(self):
-        for y in range(MAP_HEIGHT):
-                for x in range(MAP_WIDTH):
+        for y in range(cfg.MAP_HEIGHT):
+                for x in range(cfg.MAP_WIDTH):
                     if self.world.matrix[y][x] == 0:
-                        return [x*TILE_SIZE, y*TILE_SIZE]
+                        return [x*cfg.TILE_SIZE, y*cfg.TILE_SIZE]
 
     def get_random_floor_coords(self, count):
         floors = []
         
-        for y in range(MAP_HEIGHT):
-            for x in range(MAP_WIDTH):
+        for y in range(cfg.MAP_HEIGHT):
+            for x in range(cfg.MAP_WIDTH):
                 if self.world.matrix[y][x] == 0:
-                    floors.append((x * TILE_SIZE, y * TILE_SIZE))
+                    floors.append((x * cfg.TILE_SIZE, y * cfg.TILE_SIZE))
         
         if len(floors) < count:
             return floors
         return random.sample(floors, count)
 
     def _generate_leafs(self):
-        root = Leaf(0, 0, MAP_WIDTH, MAP_HEIGHT)
+        root = Leaf(0, 0, cfg.MAP_WIDTH, cfg.MAP_HEIGHT)
         self.leafs.append(root)
 
         runSplit = True
@@ -49,7 +47,7 @@ class BSPGeneration:
             for l in self.leafs:
                 if l.left_child != None or l.right_child != None: continue
 
-                if (l.width > MAX_LEAF_SIZE) or (l.height > MAX_LEAF_SIZE) or (random.random() > SPLIT_BIG_LEAF_RELATIONSHIP):
+                if (l.width > cfg.MAX_LEAF_SIZE) or (l.height > cfg.MAX_LEAF_SIZE) or (random.random() > cfg.SPLIT_BIG_LEAF_RELATIONSHIP):
                     if l.split():
                         self.leafs.append(l.left_child)
                         self.leafs.append(l.right_child)
@@ -59,7 +57,7 @@ class BSPGeneration:
         root.create_rooms()
 
     def _init_matrix(self):
-        self.world.matrix = [[1 for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
+        self.world.matrix = [[1 for _ in range(cfg.MAP_WIDTH)] for _ in range(cfg.MAP_HEIGHT)]
 
         for leaf in self.leafs:
             if leaf.room is not None:
@@ -68,8 +66,8 @@ class BSPGeneration:
 
                 for dy in range(leaf.room.height):
                     for dx in range(leaf.room.width):
-                        nx = min(MAP_WIDTH-1, x+dx)
-                        ny = min(MAP_HEIGHT-1, y+dy)
+                        nx = min(cfg.MAP_WIDTH-1, x+dx)
+                        ny = min(cfg.MAP_HEIGHT-1, y+dy)
 
                         self.world.matrix[ny][nx] = 0
         
@@ -80,26 +78,26 @@ class BSPGeneration:
 
                 for dy in range(hall.height):
                     for dx in range(hall.width):
-                        nx = min(MAP_WIDTH-1, x+dx)
-                        ny = min(MAP_HEIGHT-1, y+dy)
+                        nx = min(cfg.MAP_WIDTH-1, x+dx)
+                        ny = min(cfg.MAP_HEIGHT-1, y+dy)
 
                         self.world.matrix[ny][nx] = 0
 
     def _create_walls(self):
-        for y in range(MAP_HEIGHT):
-            for x in range(MAP_WIDTH):
+        for y in range(cfg.MAP_HEIGHT):
+            for x in range(cfg.MAP_WIDTH):
                 if self.world.matrix[y][x] == 1:
                     # Проверяем, касается ли стена пола хотя бы с одной стороны
                     is_visible = False
                     for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                         ny, nx = y + dy, x + dx
-                        if 0 <= ny < MAP_HEIGHT and 0 <= nx < MAP_WIDTH:
+                        if 0 <= ny < cfg.MAP_HEIGHT and 0 <= nx < cfg.MAP_WIDTH:
                             if self.world.matrix[ny][nx] == 0:
                                 is_visible = True
                                 break
                     
                     if is_visible:
-                        rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        rect = pygame.Rect(x * cfg.TILE_SIZE, y * cfg.TILE_SIZE, cfg.TILE_SIZE, cfg.TILE_SIZE)
                         self.world.walls.append(rect)
 
 

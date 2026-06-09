@@ -3,25 +3,25 @@ import math
 
 from core.inventory import Inventory 
 from core.animation import Animation 
+from projectile.ping_wave import PingWave
 
-from config import PLAYER_SPEED, PLAYER_HP, PLAYER_SIZE, PLAYER_COLOR
+import config as cfg
 
 class Player:
     def __init__(self, x: int, y: int):
         self.pos = pygame.math.Vector2(x, y)
-        self.rect = pygame.Rect(x, y, PLAYER_SIZE, PLAYER_SIZE)
-        self.speed = PLAYER_SPEED
-        self.color = PLAYER_COLOR
-        self.hp = PLAYER_HP
+        self.rect = pygame.Rect(x, y, cfg.PLAYER_SIZE, cfg.PLAYER_SIZE)
+        self.speed = cfg.PLAYER_SPEED
+        self.color = cfg.PLAYER_COLOR
+        self.hp = cfg.PLAYER_HP
 
-        self.invulnerable_timer = 0 # таймер для щита бессмертия, появляющийся после получения урона
-        
         self.inventory = Inventory()
 
-        # Система анимации 
         self.anim = Animation("assets/main-Sheet.png", columns=6, speed=0.07, scale=1.5)
-        # По умолчанию будем смотреть вправо, так как парни на лево не ходят.  
         self.flip_x = True 
+
+        self.invulnerable_timer = 0 # таймер для щита бессмертия, появляющийся после получения урона
+        self.ping_timer = 0
     
     def switch_weapon(self, forward: bool):
         if forward:
@@ -29,13 +29,19 @@ class Player:
         else:
             self.inventory.prev_weapon()
 
-    def check_enemy_collisions(self, enemies):
+    def _check_enemy_collisions(self, enemies):
         for enemy in enemies:
             if self.rect.colliderect(enemy.rect):
                 self.get_damage(enemy.damage)
 
     def shot(self, camera_x: int, camera_y: int, world) -> None:
         self.inventory.get_current().shot(self.pos, camera_x, camera_y, world)
+
+    def ping(self, pings):
+        if self.ping_timer <= 0: 
+            pings.append(PingWave(self.pos.x, self.pos.y))
+            self.ping_timer = cfg.PING_TIMER
+            print("ping")
 
     def process_weapon_damage(self, enemies, walls) -> None:
         self.inventory.get_current().process_damage(enemies, self.rect, walls)
@@ -45,7 +51,7 @@ class Player:
             self.hp -= damage
             self.invulnerable_timer = 3.0
 
-    def movement(self, direction: pygame.math.Vector2, dt: float, walls: list):
+    def _movement(self, direction: pygame.math.Vector2, dt: float, walls: list):
         """ двигаем игрока:
         1) нормализация
         2) двигаем по x - проверяем на коллизии
@@ -79,6 +85,28 @@ class Player:
                 elif direction.y < 0: self.rect.top = wall.bottom         
                 self.pos.y = float(self.rect.y)
 
+    def _update_shield_timer(self, dt):
+        if self.invulnerable_timer > 0:
+            self.invulnerable_timer -= dt
+
+    def _update_ping_timer(self, dt):
+        print(self.ping_timer)
+        if self.ping_timer > 0:
+            self.ping_timer -= dt
+
+    def _update_sprite(self, direction, dt):
+        # Поворот спрайта 
+        if direction.x < 0:
+            self.flip_x = False 
+        elif direction.x > 0:
+            self.flip_x = True 
+
+        # Обновление кадров 
+        if direction.magnitude() > 0:
+            self.anim.update(dt) 
+        else:
+            self.anim.current_idx = 0 
+
     def update(self, dt: float, world): 
         keys = pygame.key.get_pressed()
         direction = pygame.math.Vector2(0, 0)
@@ -87,26 +115,19 @@ class Player:
         if keys[pygame.K_s] or keys[pygame.K_DOWN]: direction.y += 1
         if keys[pygame.K_a] or keys[pygame.K_LEFT]: direction.x -= 1
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]: direction.x += 1
+        
+        if keys[pygame.K_q] and self.ping_timer == 0: 
+            world.pings.append(PingWave(self.rect.centerx, self.rect.centery))
 
-        # Поворот спрайта 
-        if direction.x < 0:
-            self.flip_x = False 
-        elif direction.x > 0:
-            self.flip_x = True 
-
-        self.movement(direction, dt, world.walls)
-        self.check_enemy_collisions(world.enemies)
+        self._movement(direction, dt, world.walls)
+        self._check_enemy_collisions(world.enemies)
         self.inventory.update_all()
 
-        # Обновление кадров 
-        if direction.magnitude() > 0:
-            self.anim.update(dt) 
-        else:
-            self.anim.current_idx = 0 
+        self._update_sprite(direction, dt)
 
-        # обновление таймера для щита бессмертия
-        if self.invulnerable_timer > 0:
-            self.invulnerable_timer -= dt
+        # обновление таймера пинга и щита бессмертия
+        self._update_ping_timer(dt)
+        self._update_shield_timer(dt)
 
     def draw(self, surface: pygame.Surface, cam_x: float, cam_y: float):
         screen_x = self.rect.x - cam_x

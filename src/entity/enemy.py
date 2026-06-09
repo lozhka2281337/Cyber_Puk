@@ -54,7 +54,7 @@ class Enemy:
                 return False
         return True 
 
-    def update(self, dt: float, player, world) -> None:
+    def update(self, world, player, dt: float) -> None:
         sees_player = self.check_los(player.rect, world.walls)
         direction = pygame.math.Vector2(0, 0)
         
@@ -79,8 +79,8 @@ class AnimatedEnemy(Enemy):
         self.anim_right = None
         self.current_anim = None
 
-    def update(self, dt: float, player, world) -> None:
-        super().update(dt, player, world)
+    def update(self, world, player, dt: float) -> None:
+        super().update(world, player, dt)
         
         if player.rect.centerx < self.rect.centerx:
             self.current_anim = self.anim_left

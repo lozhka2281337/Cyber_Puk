@@ -1,8 +1,6 @@
 import pygame
-from config import (SCREEN_WIDTH, SCREEN_HEIGHT, TILE_SIZE, 
-                    WALL_COLOR, MAP_WIDTH, MAP_HEIGHT, 
-                    SURFACE_COLOR, DARKNESS_DEGREE, DARKNESS_RADIUS
-)
+
+import config as cfg
 
 
 class Renderer:
@@ -15,10 +13,11 @@ class Renderer:
         self.effects = world.effects
         self.grenades = world.grenades
         self.enemies = world.enemies
+        self.pings = world.pings
         self.matrix = world.matrix
 
         self.FONT = pygame.font.SysFont("Arial", 32, bold=True)
-        self.map_surface = pygame.Surface((MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE), pygame.SRCALPHA)
+        self.map_surface = pygame.Surface((cfg.MAP_WIDTH * cfg.TILE_SIZE, cfg.MAP_HEIGHT * cfg.TILE_SIZE), pygame.SRCALPHA)
 
         # Загружаем спрайт для отображения HP
         self.hp_sprite = pygame.image.load("assets/Hp.png").convert_alpha()
@@ -30,15 +29,15 @@ class Renderer:
         self.darkness_mask = self._create_darkness_mask()
 
     def _init_map_surface(self):
-        for y in range(MAP_HEIGHT):
-            for x in range(MAP_WIDTH):
+        for y in range(cfg.MAP_HEIGHT):
+            for x in range(cfg.MAP_WIDTH):
                 if self.matrix[y][x] == 0:
-                    pygame.draw.rect(self.map_surface, SURFACE_COLOR,
-                                     (x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+                    pygame.draw.rect(self.map_surface, cfg.SURFACE_COLOR,
+                                     (x * cfg.TILE_SIZE, y * cfg.TILE_SIZE, cfg.TILE_SIZE, cfg.TILE_SIZE))
 
         """ стены """
         for wall in self.walls:
-            pygame.draw.rect(self.map_surface, WALL_COLOR, wall)
+            pygame.draw.rect(self.map_surface, cfg.WALL_COLOR, wall)
 
     def _draw_hp(self):
         """Рисуем столько спрайтов HP, сколько здоровья у игрока"""
@@ -56,14 +55,14 @@ class Renderer:
         self.screen.fill((0, 0, 0))
 
         death_msg = self.FONT.render("GAME OVER", True, (255, 255, 255))
-        self.screen.blit(death_msg, (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2))
+        self.screen.blit(death_msg, (cfg.SCREEN_WIDTH // 2 - 100, cfg.SCREEN_HEIGHT // 2))
         pygame.display.flip()
 
         pygame.time.wait(3000)
 
     def _draw_weapon_hud(self):
-        start_x = SCREEN_WIDTH - 220
-        start_y = SCREEN_HEIGHT - 80
+        start_x = cfg.SCREEN_WIDTH - 220
+        start_y = cfg.SCREEN_HEIGHT - 80
 
         for i in range(len(self.player.inventory.weapons)):
             weapon = self.player.inventory.weapons[i]
@@ -83,21 +82,21 @@ class Renderer:
         if hasattr(weapon, 'draw'):
             weapon.draw(self.screen, camera_x, camera_y, self.player.rect, self.walls)
 
-    def _create_darkness_mask(self, width=SCREEN_WIDTH, height=SCREEN_HEIGHT, radius=DARKNESS_RADIUS) -> pygame.Surface:
+    def _create_darkness_mask(self, width=cfg.SCREEN_WIDTH, height=cfg.SCREEN_HEIGHT, radius=cfg.DARKNESS_RADIUS) -> pygame.Surface:
         # Создаем поверхность размером с экран с поддержкой прозрачности 
         mask = pygame.Surface((width, height), pygame.SRCALPHA)
         # Заливаем всю маску полностью черным цветом
-        mask.fill((0, 0, 0, DARKNESS_DEGREE)) 
+        mask.fill((0, 0, 0, cfg.DARKNESS_DEGREE)) 
 
         for r in range(radius, 0, -2):
-            alpha = int(DARKNESS_DEGREE * (r / radius))
+            alpha = int(cfg.DARKNESS_DEGREE * (r / radius))
             pygame.draw.circle(mask, (0, 0, 0, alpha), (width // 2, height // 2), r)
             
         return mask
 
     def draw(self, camera_x, camera_y):
         """ карта """
-        self.screen.fill(WALL_COLOR)
+        #self.screen.fill(WALL_COLOR)
         self.screen.blit(self.map_surface, (-camera_x, -camera_y))
 
         """ ентити """
@@ -117,6 +116,9 @@ class Renderer:
 
         for enemy in self.enemies:
             enemy.draw(self.screen, camera_x, camera_y)
+
+        for ping in self.pings:
+            ping.draw(self.screen, camera_x, camera_y)
 
         # рисуем темноту вокруг игрока
         self.screen.blit(self.darkness_mask, (0, 0))

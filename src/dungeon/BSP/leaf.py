@@ -1,13 +1,11 @@
 import random
 import pygame
 
-from config import (MAP_HEIGHT, MAP_WIDTH, 
-                    MIN_LEAF_SIZE, MIN_ROOM_SIZE, MAX_ROOM_SIZE, HALL_WIDTH,
-                    PARTIES_RELATIONSHIP
-                    )
+import config as cfg
+
 
 class Leaf:
-    def __init__(self, x=0, y=0, width=MAP_WIDTH, height=MAP_HEIGHT):
+    def __init__(self, x=0, y=0, width=cfg.MAP_WIDTH, height=cfg.MAP_HEIGHT):
         self.x = x
         self.y = y
         self.width = width
@@ -23,18 +21,18 @@ class Leaf:
             return False
         
         horizontal_split = random.random() > 0.5
-        if self.width / self.height > PARTIES_RELATIONSHIP:
+        if self.width / self.height > cfg.PARTIES_RELATIONSHIP:
             horizontal_split = False
-        elif self.height / self.width >= PARTIES_RELATIONSHIP:
+        elif self.height / self.width >= cfg.PARTIES_RELATIONSHIP:
             horizontal_split = True
 
-        mx = self.width - MIN_LEAF_SIZE
-        if horizontal_split: mx = self.height - MIN_LEAF_SIZE
+        mx = self.width - cfg.MIN_LEAF_SIZE
+        if horizontal_split: mx = self.height - cfg.MIN_LEAF_SIZE
 
-        if mx < MIN_LEAF_SIZE: 
+        if mx < cfg.MIN_LEAF_SIZE: 
             return False
 
-        spliter = random.randint(MIN_LEAF_SIZE, mx)
+        spliter = random.randint(cfg.MIN_LEAF_SIZE, mx)
 
         if horizontal_split:
             self.left_child = Leaf(self.x, self.y, self.width, spliter)
@@ -57,8 +55,8 @@ class Leaf:
                 self.halls = self._create_hall(self.left_child._get_room(), self.right_child._get_room())
         else:
             # создаем комнату
-            room_width = random.randint(MIN_ROOM_SIZE, max(MIN_ROOM_SIZE, min(MAX_ROOM_SIZE, self.width - 2)))
-            room_height = random.randint(MIN_ROOM_SIZE, max(MIN_ROOM_SIZE, min(MAX_ROOM_SIZE, self.height - 2)))
+            room_width = random.randint(cfg.MIN_ROOM_SIZE, max(cfg.MIN_ROOM_SIZE, min(cfg.MAX_ROOM_SIZE, self.width - 2)))
+            room_height = random.randint(cfg.MIN_ROOM_SIZE, max(cfg.MIN_ROOM_SIZE, min(cfg.MAX_ROOM_SIZE, self.height - 2)))
 
             room_x = random.randint(1 , max(1, self.width - room_width - 1))
             room_y = random.randint(1, max(1, self.height - room_height - 1))
@@ -89,15 +87,15 @@ class Leaf:
         p2_x = r.centerx
         p2_y = r.centery
 
-        offset = HALL_WIDTH // 2
+        offset = cfg.HALL_WIDTH // 2
 
         # Сначала горизонтально, затем вертикально
         x = min(p1_x, p2_x) - offset
-        width = abs(p2_x - p1_x) + HALL_WIDTH
-        halls.append(pygame.Rect(x, p1_y - offset, width, HALL_WIDTH))
+        width = abs(p2_x - p1_x) + cfg.HALL_WIDTH
+        halls.append(pygame.Rect(x, p1_y - offset, width, cfg.HALL_WIDTH))
 
         y = min(p1_y, p2_y) - offset 
-        height = abs(p2_y - p1_y) + HALL_WIDTH
-        halls.append(pygame.Rect(p2_x - offset, y, HALL_WIDTH, height))
+        height = abs(p2_y - p1_y) + cfg.HALL_WIDTH
+        halls.append(pygame.Rect(p2_x - offset, y, cfg.HALL_WIDTH, height))
         
         return halls

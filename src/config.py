@@ -96,5 +96,4 @@ BULLET_COLOR = (255, 255, 0)
 AGRO_DISTANCE = 350         # Дистанция, с которой видит игрока
 LOSE_AGRO_DISTANCE = 600    # Дистанция, на которой забывает игрока
 WAYPOINT_TOLERANCE = 10     # Погрешность прибытия на точку (в пикселях)
-
-INITIAL_ENEMY_COUNT = 30    # Точное количество врагов при генерации уровня 
+INITIAL_GANGS_COUNT = 6

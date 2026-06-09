@@ -16,6 +16,17 @@ class Swarm(AnimatedEnemy):
         self.anim_right = Animation("assets/fast-enemy-run-right.png", columns=5, speed=0.1, scale=1.5)
         self.current_anim = self.anim_right
 
+    def update(self, dt: float, player, world) -> None:
+        direction = pygame.math.Vector2(0, 0)
+        dist = self.pos.distance_to(player.pos)
+        
+        # Если враг на экране (до 800 пикселей) И между вами нет стен
+        if dist < 800 and self.check_los(player.rect, world.walls):
+             direction = pygame.math.Vector2(player.rect.centerx - self.rect.centerx,
+                                             player.rect.centery - self.rect.centery)
+        self.move(world.walls, dt, direction)
+        super().update(dt, player, world) # Для анимации
+
 # 2. TANK (Медленный, толстый, бьет больно)
 class Tank(AnimatedEnemy):
     def __init__(self, x: int, y: int):
@@ -26,6 +37,17 @@ class Tank(AnimatedEnemy):
         self.anim_right = Animation("assets/tank-sprite-right.png", columns=4, speed=0.25, scale=2.5)
         self.current_anim = self.anim_right
 
+    def update(self, dt: float, player, world) -> None:
+        direction = pygame.math.Vector2(0, 0)
+        dist = self.pos.distance_to(player.pos)
+        
+        # Если враг на экране (до 800 пикселей) И между вами нет стен
+        if dist < 800 and self.check_los(player.rect, world.walls):
+             direction = pygame.math.Vector2(player.rect.centerx - self.rect.centerx,
+                                             player.rect.centery - self.rect.centery)
+        self.move(world.walls, dt, direction)
+        super().update(dt, player, world)
+
 # 3. SHOOTER (Держит дистанцию, стреляет)
 class Shooter(Enemy):
     def __init__(self, x: int, y: int):
@@ -35,14 +57,16 @@ class Shooter(Enemy):
         self.last_shot_time = 0
         self.shoot_cooldown = 1500
 
-    def _handle_chase(self, player, world, dt: float) -> pygame.math.Vector2:
-
-        if self.check_los(player.rect, world.walls):
+    def update(self, dt: float, player, world) -> None:
+        direction = pygame.math.Vector2(0, 0)
+        dist = self.pos.distance_to(player.pos)
+        
+        # Если враг на экране (до 800 пикселей) И между вами нет стен
+        if dist < 800 and self.check_los(player.rect, world.walls):
             vec_to_player = pygame.math.Vector2(player.rect.centerx - self.rect.centerx,
                                                 player.rect.centery - self.rect.centery)
-            dist = vec_to_player.magnitude()
-            direction = pygame.math.Vector2(0, 0)
-
+            
+            # Держит дистанцию
             if dist > self.attack_range + 50:
                 direction = vec_to_player
             elif dist < self.attack_range - 50:
@@ -53,16 +77,7 @@ class Shooter(Enemy):
                 self.last_shot_time = current_time
                 self._shoot(player, world.bullets)
 
-            return direction
-
-        elif self.last_known_pos:
-            vec_to_lkp = self.last_known_pos - self.pos
-            if vec_to_lkp.magnitude() < 50:
-                self.last_known_pos = None 
-                return pygame.math.Vector2(0, 0)
-            return vec_to_lkp
-
-        return pygame.math.Vector2(0, 0)
+        self.move(world.walls, dt, direction)
 
     def _shoot(self, player, bullets: list) -> None:
         new_bullet = Bullet(self.rect.centerx, self.rect.centery,

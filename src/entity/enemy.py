@@ -1,12 +1,5 @@
 import pygame
-from enum import Enum, auto
-from config import (ENEMY_SIZE, AGRO_DISTANCE, LOSE_AGRO_DISTANCE, WAYPOINT_TOLERANCE)
-
-# ИИ которая решает, что делает враг
-class EnemyState(Enum):
-    IDLE = auto()   # Просто стоит на посту
-    CHASE = auto()  # Агрится и бежит за игроком
-    RETURN = auto() # Потерял игрока из виду и топает на пост
+from config import ENEMY_SIZE
 
 class Enemy:
     def __init__(self, x: int, y: int, hp: int, speed: int, color: tuple):
@@ -17,14 +10,6 @@ class Enemy:
         self.color = color
         self.knockback = pygame.math.Vector2(0, 0)
         self.is_moving = False
-
-        # Настройки мозгов (ИИ) 
-        self.home_pos = pygame.math.Vector2(x, y)
-        self.state = EnemyState.IDLE
-        self.agro_distance = AGRO_DISTANCE
-        self.lose_agro_distance = LOSE_AGRO_DISTANCE
-
-        self.last_known_pos = None
 
     def move(self, walls: list[pygame.Rect], dt: float, direction: pygame.math.Vector2) -> None:
         if direction.magnitude() > 0:
@@ -64,8 +49,6 @@ class Enemy:
 
     def get_damage(self, damage: int) -> None:
         self.hp -= damage
-        if self.state in [EnemyState.IDLE, EnemyState.RETURN]:
-            self.state = EnemyState.CHASE
 
     def check_los(self, target_rect: pygame.Rect, walls: list[pygame.Rect]) -> bool:
         line = (self.rect.center, target_rect.center)
@@ -74,55 +57,8 @@ class Enemy:
                 return False
         return True
 
-    # Поведение в разных ситуациях 
-    def _handle_chase(self, player, world, dt: float) -> pygame.math.Vector2:
-        if self.check_los(player.rect, world.walls):
-            return pygame.math.Vector2(player.rect.centerx - self.rect.centerx,
-                                       player.rect.centery - self.rect.centery)
-        elif self.last_known_pos:
-            vec_to_lkp = self.last_known_pos - self.pos
-            if vec_to_lkp.magnitude() < WAYPOINT_TOLERANCE:
-                self.last_known_pos = None 
-                return pygame.math.Vector2(0, 0)
-            return vec_to_lkp
-
-        return pygame.math.Vector2(0, 0)
-
-    def _handle_return(self, world, dt: float) -> pygame.math.Vector2:
-        vec_to_home = self.home_pos - self.pos
-        if vec_to_home.magnitude() < WAYPOINT_TOLERANCE:
-            self.state = EnemyState.IDLE 
-            return pygame.math.Vector2(0, 0)
-        return vec_to_home
-
     def update(self, dt: float, player, world) -> None:
-        dist_to_player = self.pos.distance_to(player.pos)
-        has_los = self.check_los(player.rect, world.walls)
-
-        if has_los:
-            self.last_known_pos = pygame.math.Vector2(player.rect.center)
-
-        if self.state in [EnemyState.IDLE, EnemyState.RETURN]:
-            if dist_to_player < self.agro_distance and has_los:
-                self.state = EnemyState.CHASE
-
-        elif self.state == EnemyState.CHASE:
-            if has_los:
-                if dist_to_player > self.lose_agro_distance:
-                    self.state = EnemyState.RETURN
-                    self.last_known_pos = None
-            else:
-                if not self.last_known_pos:
-                    self.state = EnemyState.RETURN
-
-        direction = pygame.math.Vector2(0, 0)
-
-        if self.state == EnemyState.CHASE:
-            direction = self._handle_chase(player, world, dt)
-        elif self.state == EnemyState.RETURN:
-            direction = self._handle_return(world, dt)
-
-        self.move(world.walls, dt, direction)
+        pass
 
     def draw(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
         offset_rect = self.rect.move(-cam_x, -cam_y)
@@ -136,8 +72,6 @@ class AnimatedEnemy(Enemy):
         self.current_anim = None
 
     def update(self, dt: float, player, world) -> None:
-        super().update(dt, player, world)
-
         if player.rect.centerx < self.rect.centerx:
             self.current_anim = self.anim_left
         else:

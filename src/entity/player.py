@@ -37,9 +37,9 @@ class Player:
     def shot(self, camera_x: int, camera_y: int, world) -> None:
         self.inventory.get_current().shot(self.pos, camera_x, camera_y, world)
 
-    def ping(self, pings):
-        if self.ping_timer <= 0: 
-            pings.append(PingWave(self.pos.x, self.pos.y))
+    def ping(self, world):
+        if self.ping_timer <= 0 and world.mod == cfg.DARK_MOD: 
+            world.pings.append(PingWave(self.pos.x, self.pos.y))
             self.ping_timer = cfg.PING_TIMER
 
     def process_weapon_damage(self, enemies, walls) -> None:
@@ -114,9 +114,6 @@ class Player:
         if keys[pygame.K_a] or keys[pygame.K_LEFT]: direction.x -= 1
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]: direction.x += 1
         
-        if keys[pygame.K_q] and self.ping_timer == 0: 
-            world.pings.append(PingWave(self.rect.centerx, self.rect.centery))
-
         self._movement(direction, dt, world.walls)
         self._check_enemy_collisions(world.enemies)
         self.inventory.update_all()

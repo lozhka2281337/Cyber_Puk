@@ -8,6 +8,8 @@ class Renderer:
         self.screen = screen
         self.player = player
 
+        self.world = world
+
         self.walls = world.walls
         self.bullets = world.bullets
         self.effects = world.effects
@@ -109,7 +111,7 @@ class Renderer:
 
     def draw(self, camera_x, camera_y):
         """ карта """
-        #self.screen.fill(WALL_COLOR)
+        self.screen.fill(cfg.FLOOR_COLOR)
         self.screen.blit(self.map_surface, (-camera_x, -camera_y))
 
         """ ентити """
@@ -131,21 +133,22 @@ class Renderer:
             if enemy.visible_timer <= 0:
                 enemy.draw(self.screen, camera_x, camera_y)
 
-        for ping in self.pings:
-            ping.draw(self.screen, camera_x, camera_y)
+        if self.world.mod == cfg.DARK_MOD:
+            for ping in self.pings:
+                ping.draw(self.screen, camera_x, camera_y)
 
-        # рисуем темноту вокруг игрока
-        self.screen.blit(self.darkness_mask, (0, 0))
+            # рисуем темноту вокруг игрока
+            self.screen.blit(self.darkness_mask, (0, 0))
 
-        # рисуем врагов, которые попали под пинг
-        for enemy in self.enemies:
-            if enemy.visible_timer > 0.0:
-                enemy.draw(self.screen, camera_x, camera_y)
-                print(enemy.visible_timer)
+            # рисуем врагов, которые попали под пинг
+            for enemy in self.enemies:
+                if enemy.visible_timer > 0.0:
+                    enemy.draw(self.screen, camera_x, camera_y)
+
+            self._draw_ping_interface()
 
         """ интерфейс """
         self._draw_hp()
         self._draw_weapon_hud()
-        self._draw_ping_interface()
 
         pygame.display.flip()

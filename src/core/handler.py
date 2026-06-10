@@ -21,7 +21,7 @@ class Handler:
                 if event.key == pygame.K_ESCAPE:
                     game.running = False
                 if event.key == pygame.K_q:
-                    self.player.ping(self.pings)
+                    self.player.ping(self.world)
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # обработка колесика мышки (переключает оружие)

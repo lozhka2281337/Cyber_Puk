@@ -1,5 +1,9 @@
+import config as cfg
+
 class World:
     def __init__(self):
+        self.mod = cfg.NORMAL_MOD
+
         self.enemies = []
         self.bullets = []
         self.grenades = []

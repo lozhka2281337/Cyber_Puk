@@ -15,12 +15,18 @@ SPAWN_ENEMY_EVENT = pygame.event.custom_type()
 SPAWN_ENEMY_TIME = 1800
 
 
+""" режимы """
+NORMAL_MOD = "normal"
+DARK_MOD = "stels"
+
+
 """ карта """
 TILE_SIZE = 40
 COLS = 80
 ROWS = 60
  
 SURFACE_COLOR = (75, 97, 42)
+FLOOR_COLOR = (0, 0, 0)
 WALL_COLOR = (143, 0, 52)
 
 

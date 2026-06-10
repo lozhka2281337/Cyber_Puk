@@ -16,6 +16,7 @@ class Renderer:
         self.grenades = world.grenades
         self.enemies = world.enemies
         self.pings = world.pings
+        self.items = world.items
         self.matrix = world.matrix
 
         self.FONT = pygame.font.SysFont("Arial", 32, bold=True)
@@ -104,7 +105,7 @@ class Renderer:
             status_text = f"СКАНИРОВАНИЕ... {round(self.player.ping_timer * 10 / cfg.FPS, 2)}"
             text_color = (100, 100, 100)
 
-        self.screen.blit(font.render(status_text, True, text_color), (10, 40))
+        self.screen.blit(font.render(status_text, True, text_color), (10, 60))
 
     def _create_darkness_mask(self, width=cfg.SCREEN_WIDTH, height=cfg.SCREEN_HEIGHT, radius=cfg.DARKNESS_RADIUS) -> pygame.Surface:
         # Создаем поверхность размером с экран с поддержкой прозрачности 
@@ -141,6 +142,9 @@ class Renderer:
         for enemy in self.enemies:
             if enemy.visible_timer <= 0:
                 enemy.draw(self.screen, camera_x, camera_y)
+
+        for item in self.items:
+            item.draw(self.screen, camera_x, camera_y)
 
         if self.world.mod == cfg.DARK_MOD:
             for ping in self.pings:

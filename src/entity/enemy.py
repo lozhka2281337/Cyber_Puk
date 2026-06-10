@@ -18,20 +18,17 @@ class Enemy:
         self.color = color
 
         self.knockback = pygame.math.Vector2(0, 0)
-<<<<<<< HEAD
+
         self.is_moving = False
 
-        # Настройки мозгов (ИИ) 
+        # Настройки ИИ 
         self.home_pos = pygame.math.Vector2(x, y)
         self.state = EnemyState.IDLE
         self.agro_distance = AGRO_DISTANCE
         self.lose_agro_distance = LOSE_AGRO_DISTANCE
 
         self.last_known_pos = None
-=======
-        self.is_moving = False 
         self.visible_timer = 0 # таймер для стелс режима
->>>>>>> feature/stels-mode
 
     def move(self, walls: list[pygame.Rect], dt: float, direction: pygame.math.Vector2) -> None:
         if direction.magnitude() > 0:
@@ -102,8 +99,7 @@ class Enemy:
             return pygame.math.Vector2(0, 0)
         return vec_to_home
 
-<<<<<<< HEAD
-    def update(self, dt: float, player, world) -> None:
+    def update(self, world, player, dt: float) -> None:
         dist_to_player = self.pos.distance_to(player.pos)
         has_los = self.check_los(player.rect, world.walls)
 
@@ -130,22 +126,9 @@ class Enemy:
         elif self.state == EnemyState.RETURN:
             direction = self._handle_return(world, dt)
 
-=======
-    def update(self, world, player, dt: float) -> None:
-        sees_player = self.check_los(player.rect, world.walls)
-        direction = pygame.math.Vector2(0, 0)
-        
-        if sees_player: 
-            direction = pygame.math.Vector2(player.rect.centerx - self.rect.centerx, 
-                                            player.rect.centery - self.rect.centery)
-            
-        if direction.magnitude() > 0:
-            direction = direction.normalize()
-
         if self.visible_timer > 0:
             self.visible_timer -= dt
-            
->>>>>>> feature/stels-mode
+
         self.move(world.walls, dt, direction)
 
     def draw(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
@@ -159,15 +142,10 @@ class AnimatedEnemy(Enemy):
         self.anim_right = None
         self.current_anim = None
 
-<<<<<<< HEAD
-    def update(self, dt: float, player, world) -> None:
-        super().update(dt, player, world)
 
-=======
     def update(self, world, player, dt: float) -> None:
         super().update(world, player, dt)
         
->>>>>>> feature/stels-mode
         if player.rect.centerx < self.rect.centerx:
             self.current_anim = self.anim_left
         else:

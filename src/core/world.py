@@ -9,11 +9,8 @@ class World:
         self.grenades = []
         self.effects = []
         self.walls = []
-<<<<<<< HEAD
         self.items = []
-=======
         self.pings = []
->>>>>>> feature/stels-mode
 
         # матрица карты
         self.matrix = []

@@ -6,6 +6,13 @@ from config import (ENEMY_SWARM_HP, ENEMY_SWARM_SPEED, ENEMY_SWARM_COLOR, ENEMY_
                     ENEMY_TANK_HP, ENEMY_TANK_SPEED, ENEMY_TANK_COLOR, ENEMY_TANK_ATTACK_RANGE, ENEMY_TANK_DAMAGE,
                     ENEMY_SHOOTER_HP, ENEMY_SHOOTER_SPEED, ENEMY_SHOOTER_COLOR, ENEMY_SHOOTER_ATTACK_RANGE, ENEMY_SHOOTER_DAMAGE)
 
+SHOOTER_ADVANCE_DISTANCE = 50
+SHOOTER_RETREAT_DISTANCE = 50
+SHOOTER_BULLET_SPEED = 400
+SHOOTER_BULLET_COLOR = (255, 50, 50)
+SHOOTER_SHOOT_COOLDOWN = 1500
+
+
 # 1. SWARM (Быстрый бегун, берет количеством)
 class Swarm(AnimatedEnemy):
     def __init__(self, x: int, y: int, room: pygame.Rect):
@@ -15,6 +22,7 @@ class Swarm(AnimatedEnemy):
         self.anim_left = Animation("assets/fast-enemy-run-left.png", columns=5, speed=0.1, scale=1.5)
         self.anim_right = Animation("assets/fast-enemy-run-right.png", columns=5, speed=0.1, scale=1.5)
         self.current_anim = self.anim_right
+
 
 # 2. TANK (Медленный, толстый, бьет больно)
 class Tank(AnimatedEnemy):
@@ -26,6 +34,7 @@ class Tank(AnimatedEnemy):
         self.anim_right = Animation("assets/tank-sprite-right.png", columns=4, speed=0.25, scale=2.5)
         self.current_anim = self.anim_right
 
+
 # 3. SHOOTER (Держит дистанцию, стреляет)
 class Shooter(AnimatedEnemy):
     def __init__(self, x: int, y: int, room: pygame.Rect):
@@ -33,7 +42,7 @@ class Shooter(AnimatedEnemy):
         self.attack_range = ENEMY_SHOOTER_ATTACK_RANGE
         self.damage = ENEMY_SHOOTER_DAMAGE
         self.last_shot_time = 0
-        self.shoot_cooldown = 1500
+        self.shoot_cooldown = SHOOTER_SHOOT_COOLDOWN
         self.anim_left = Animation("assets/shooter-left-run-Sheet.png", columns=6, speed=0.25, scale=1.5)
         self.anim_right = Animation("assets/shooter-right-run-Sheet.png", columns=6, speed=0.25, scale=1.5)
         self.current_anim = self.anim_right
@@ -47,27 +56,24 @@ class Shooter(AnimatedEnemy):
             dist = vec_to_player.magnitude()
             direction = pygame.math.Vector2(0, 0)
 
-
-            if dist > self.attack_range + 50:
+            if dist > self.attack_range + SHOOTER_ADVANCE_DISTANCE:
                 direction = vec_to_player
-            elif dist < self.attack_range - 50:
+            elif dist < self.attack_range - SHOOTER_RETREAT_DISTANCE:
                 direction = -vec_to_player
 
-            if self.visible_timer > 0:
-                self.visible_timer -= dt
-
-            current_time = pygame.time.get_ticks()
-            if current_time - self.last_shot_time >= self.shoot_cooldown and world.bullets is not None:
-                self.last_shot_time = current_time
-                self._shoot(player, world.bullets)
-
+            self._attempt_shoot(player, world)
             return direction
-
         else:
             return super()._handle_chase(player, world, dt)
 
-    def _shoot(self, player, bullets: list) -> None:
+    def _attempt_shoot(self, player, world) -> None:
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_shot_time >= self.shoot_cooldown and world.bullets is not None:
+            self.last_shot_time = current_time
+            self._fire_bullet(player, world.bullets)
+
+    def _fire_bullet(self, player, bullets: list) -> None:
         new_bullet = Bullet(self.rect.centerx, self.rect.centery,
                             player.rect.centerx, player.rect.centery,
-                            400, (255, 50, 50), self.damage)
+                            SHOOTER_BULLET_SPEED, SHOOTER_BULLET_COLOR, self.damage)
         bullets.append(new_bullet)

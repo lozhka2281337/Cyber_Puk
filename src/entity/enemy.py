@@ -5,10 +5,17 @@ from enum import Enum, auto
 from core.pathfinder import PathFinder
 from config import (ENEMY_SIZE, AGRO_DISTANCE, LOSE_AGRO_DISTANCE, WAYPOINT_TOLERANCE)
 
+SEPARATION_RADIUS_MULTIPLIER = 1.5
+SEPARATION_STRENGTH = 1.5
+KNOCKBACK_DECAY_RATE = 10.0
+KNOCKBACK_MIN_THRESHOLD = 10.0
+
+
 class EnemyState(Enum):
     PATROL = auto() 
     CHASE = auto() 
     RETURN = auto() 
+
 
 class Enemy:
     def __init__(self, x: int, y: int, hp: int, speed: int, color: tuple, room: pygame.Rect):
@@ -17,6 +24,7 @@ class Enemy:
         self.hp = hp
         self.speed = speed
         self.color = color
+        self.damage = 1
         self.room = room 
         self.knockback = pygame.math.Vector2(0, 0)
         self.is_moving = False
@@ -40,30 +48,39 @@ class Enemy:
 
         self.pos.x += velocity_x * dt
         self.rect.x = round(self.pos.x)
+        self._resolve_x_collision(walls, velocity_x)
 
+        self.pos.y += velocity_y * dt
+        self.rect.y = round(self.pos.y)
+        self._resolve_y_collision(walls, velocity_y)
+
+        self._decay_knockback(dt)
+
+        self.is_moving = old_pos.distance_to(self.pos) > 0.01
+
+    def _resolve_x_collision(self, walls: list[pygame.Rect], velocity_x: float) -> None:
         for wall in walls:
             if self.rect.colliderect(wall):
                 if velocity_x > 0: self.rect.right = wall.left
                 elif velocity_x < 0: self.rect.left = wall.right
                 self.pos.x = float(self.rect.x)
                 self.knockback.x = 0
+                break
 
-        self.pos.y += velocity_y * dt
-        self.rect.y = round(self.pos.y)
-
+    def _resolve_y_collision(self, walls: list[pygame.Rect], velocity_y: float) -> None:
         for wall in walls:
             if self.rect.colliderect(wall):
                 if velocity_y > 0: self.rect.bottom = wall.top
                 elif velocity_y < 0: self.rect.top = wall.bottom
                 self.pos.y = float(self.rect.y)
                 self.knockback.y = 0
+                break
 
-        if self.knockback.magnitude() > 10:
-            self.knockback = self.knockback.lerp(pygame.math.Vector2(0, 0), dt * 10)
+    def _decay_knockback(self, dt: float) -> None:
+        if self.knockback.magnitude() > KNOCKBACK_MIN_THRESHOLD:
+            self.knockback = self.knockback.lerp(pygame.math.Vector2(0, 0), dt * KNOCKBACK_DECAY_RATE)
         else:
             self.knockback.x, self.knockback.y = 0, 0
-
-        self.is_moving = old_pos.distance_to(self.pos) > 0.01
 
     def get_damage(self, damage: int) -> None:
         self.hp -= damage
@@ -115,7 +132,9 @@ class Enemy:
                 
                 if vec_to_node.magnitude() < WAYPOINT_TOLERANCE:
                     self.path.pop(0)
-                    return pygame.math.Vector2(0, 0)
+                    if not self.path:
+                        return pygame.math.Vector2(0, 0)
+                    return vec_to_node
                 return vec_to_node
             else:
                 self.last_known_pos = None
@@ -146,7 +165,7 @@ class Enemy:
     def _apply_separation(self, enemies: list, current_direction: pygame.math.Vector2) -> pygame.math.Vector2:
         separation_vector = pygame.math.Vector2(0, 0)
         neighbors_count = 0
-        separation_radius = ENEMY_SIZE * 1.5 
+        separation_radius = ENEMY_SIZE * SEPARATION_RADIUS_MULTIPLIER
 
         for other in enemies:
             if other is self:
@@ -163,11 +182,11 @@ class Enemy:
             separation_vector /= neighbors_count
             if separation_vector.magnitude() > 0:
                 separation_vector = separation_vector.normalize()
-                current_direction = current_direction + separation_vector * 1.5
+                current_direction = current_direction + separation_vector * SEPARATION_STRENGTH
 
         return current_direction
 
-    def update(self, world, player, dt: float) -> None:
+    def _update_state(self, player, world, dt: float) -> None:
         dist_to_player = self.pos.distance_to(player.pos)
         has_los = self.check_los(player.rect, world.walls)
         is_player_in_room = self.room.colliderect(player.rect)
@@ -195,6 +214,9 @@ class Enemy:
         if self.state != old_state:
             self.path.clear()
 
+    def update(self, world, player, dt: float) -> None:
+        self._update_state(player, world, dt)
+        
         direction = pygame.math.Vector2(0, 0)
 
         if self.state == EnemyState.CHASE:
@@ -214,6 +236,7 @@ class Enemy:
     def draw(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
         offset_rect = self.rect.move(-cam_x, -cam_y)
         pygame.draw.rect(surface, self.color, offset_rect)
+
 
 class AnimatedEnemy(Enemy):
     def __init__(self, x: int, y: int, hp: int, speed: int, color: tuple, room: pygame.Rect):

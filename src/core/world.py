@@ -2,7 +2,7 @@ import config as cfg
 
 class World:
     def __init__(self):
-        self.mod = cfg.NORMAL_MOD
+        self.mod = cfg.DARK_MOD
 
         self.enemies = []
         self.bullets = []

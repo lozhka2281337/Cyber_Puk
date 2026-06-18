@@ -4,9 +4,10 @@ import config as cfg
 
 
 class Renderer:
-    def __init__(self, screen, player, world):
+    def __init__(self, screen, player, cyber_core, world):
         self.screen = screen
         self.player = player
+        self.cyber_core = cyber_core
 
         self.world = world
 
@@ -141,6 +142,7 @@ class Renderer:
             if enemy.visible_timer <= 0:
                 enemy.draw(self.screen, camera_x, camera_y)
 
+        self.cyber_core.draw(self.screen, camera_x, camera_y)
         self.player.draw(self.screen, camera_x, camera_y)
 
         for effect in self.effects:

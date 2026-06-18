@@ -2,6 +2,7 @@ import pygame
 
 from dungeon.BSP.BSP_generation import BSPGeneration as BSP
 from entity.player import Player
+from entity.cyber_core import CyberCore
 
 from core.world import World
 from core.renderer import Renderer
@@ -32,8 +33,9 @@ class Game:
 
         player_x, player_y = self.dungeon_generator.get_start_coord()
 
+        self.cyber_core = CyberCore(player_x, player_y)
         self.player = Player(player_x, player_y)
-        self.renderer = Renderer(self.screen, self.player, self.world)
+        self.renderer = Renderer(self.screen, self.player, self.cyber_core, self.world)
         self.handler = Handler(self.player, self.world)
         self.camera = Camera(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
         self.spawner = Spawner(self.world, self.dungeon_generator, self.player)
@@ -48,6 +50,7 @@ class Game:
 
     def _update(self, dt: float):
         self.player.update(dt, self.world)   
+        self.cyber_core.update()
 
         for bullet in self.world.bullets[:]:
             bullet.update(self.world, self.player, dt)

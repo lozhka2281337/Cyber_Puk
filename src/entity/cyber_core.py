@@ -57,6 +57,7 @@ class CyberCore:
     def core_activate(self, world, player):
         if self.can_interact(player):
             world.mod = cfg.NORMAL_MOD
+            world.core_activated = True
             
 
     def can_interact(self, player) -> bool:

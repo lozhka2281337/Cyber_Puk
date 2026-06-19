@@ -3,11 +3,12 @@ import pygame
 from dungeon.BSP.BSP_generation import BSPGeneration as BSP
 from entity.player import Player
 from entity.cyber_core import CyberCore
+from entity.boss import Boss
 
 from core.world import World
 from core.renderer import Renderer
 from core.handler import Handler
-from core.camera import Camera 
+from core.camera import Camera
 from core.spawner import Spawner
 from core.menu import MainMenu
 
@@ -32,24 +33,52 @@ class Game:
 
         player_x, player_y = self.dungeon_generator.get_start_coord()
         core_x, core_y = self.dungeon_generator.get_cyber_core_coord(player_x, player_y)
-        
+
         self.cyber_core = CyberCore(core_x, core_y)
         self.player = Player(player_x, player_y)
+        self.world.player = self.player
+        self.world.start_room = self._find_room_by_point(player_x, player_y)
+
         self.renderer = Renderer(self.screen, self.player, self.cyber_core, self.world)
         self.handler = Handler(self.player, self.cyber_core, self.world)
         self.camera = Camera(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
         self.spawner = Spawner(self.world, self.dungeon_generator, self.player)
-        
-        self.spawner.spawn_initial()  
-        
-        self.running = True 
+
+        self.spawner.spawn_initial()
+
+        self.running = True
+
+    def _find_room_by_point(self, x: int, y: int):
+        for room in self.world.rooms:
+            if room.collidepoint(x, y):
+                return room
+        return self.world.rooms[0] if self.world.rooms else None
+
+    def spawn_boss_in_start_room(self):
+        if self.world.boss_spawned:
+            return
+        if self.world.start_room is None:
+            return
+
+        room = self.world.start_room
+        boss_x = room.centerx - 32
+        boss_y = room.centery - 32
+
+        self.world.enemies.clear()
+        self.world.bullets.clear()
+        self.world.grenades.clear()
+        self.world.effects.clear()
+
+        boss = Boss(boss_x, boss_y, room)
+        self.world.enemies.append(boss)
+        self.world.boss_spawned = True
 
     def _death_player(self):
         self.renderer.draw_death_screen()
         self._new_game()
 
     def _update(self, dt: float):
-        self.player.update(dt, self.world)   
+        self.player.update(dt, self.world)
         self.cyber_core.update()
 
         for bullet in self.world.bullets[:]:
@@ -57,7 +86,7 @@ class Game:
 
         for grenade in self.world.grenades[:]:
             grenade.update(self.world, self.camera, dt)
-  
+
         for effect in self.world.effects[:]:
             effect.update(self.world.effects, dt)
 
@@ -69,10 +98,10 @@ class Game:
 
         self.player.process_weapon_damage(self.world.enemies, self.world.walls)
         self.world.enemies[:] = [enemy for enemy in self.world.enemies if enemy.hp > 0]
-        
+
         for item in self.world.items[:]:
             if self.player.rect.colliderect(item.rect):
-                if self.player.hp < cfg.PLAYER_HP: 
+                if self.player.hp < cfg.PLAYER_HP:
                     self.player.hp += 1
                     self.world.items.remove(item)
 
@@ -82,7 +111,7 @@ class Game:
     def _draw(self, cam_x, cam_y, dt):
         current_weapon = self.player.inventory.get_current()
         if hasattr(current_weapon, 'is_firing') and current_weapon.is_firing:
-            self.camera.add_shake(3.0) 
+            self.camera.add_shake(3.0)
 
         self.renderer.draw(cam_x, cam_y)
 
@@ -91,7 +120,7 @@ class Game:
             dt = min(0.05, self.clock.tick(cfg.FPS) / 1000.0)
 
             cam_x, cam_y = self.camera.get_offset(self.player.rect, dt)
-            
+
             self.handler.game_process_events(self, cam_x, cam_y)
             self._update(dt)
             self._draw(cam_x, cam_y, dt)

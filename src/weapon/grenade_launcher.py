@@ -1,7 +1,7 @@
 import pygame
 
 from .weapon import Weapon
-from projectile.grenade import Grenade 
+from projectile.grenade import Grenade
 
 class GrenadeLauncher(Weapon):
     def __init__(self, name, radius, clip, shot_delay, throw_speed, blast_radius, fuse_time, max_range, damage=0):
@@ -10,7 +10,7 @@ class GrenadeLauncher(Weapon):
         self.blast_radius = blast_radius
         self.fuse_time = fuse_time
         self.max_range = max_range
-        self.color = (255, 100, 150) 
+        self.color = (255, 100, 150)
 
     def shot(self, player_pos, camera_x: float, camera_y: float, world) -> None:
         current_time = pygame.time.get_ticks()
@@ -24,13 +24,16 @@ class GrenadeLauncher(Weapon):
         start_x, start_y = player_pos.x + 16, player_pos.y + 16
 
         grenade = Grenade(
-            start_x, start_y, 
-            target_x, target_y, 
-            self.throw_speed, 
-            self.color, 
-            self.blast_radius, 
-            self.fuse_time, 
-            self.max_range
+            start_x,
+            start_y,
+            target_x,
+            target_y,
+            self.throw_speed,
+            self.color,
+            self.blast_radius,
+            self.fuse_time,
+            self.max_range,
+            owner="player"
         )
 
-        world.grenades.append(grenade) 
+        world.grenades.append(grenade)

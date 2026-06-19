@@ -13,5 +13,8 @@ class World:
         self.pings = []
         self.rooms = []
 
-        # матрица карты
+        self.core_activated = False
+        self.boss_spawned = False
+        self.start_room = None
+
         self.matrix = []

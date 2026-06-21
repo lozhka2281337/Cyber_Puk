@@ -51,6 +51,8 @@ class Handler:
                     game.menu.update_selection_by_keyboard(event)
                 elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
                     return game.menu.handle_space()
+                elif event.key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_d, pygame.K_a):
+                    return game.menu.update_volume(event)
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                return game.menu.handle_left_mouse_button()

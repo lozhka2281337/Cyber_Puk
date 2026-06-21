@@ -53,7 +53,7 @@ class Game:
                 pygame.quit()
                 return
             elif button_clicked == cfg.VOLUME_BUTTON:
-                pass
+                self.audio_manager.set_bgm_volume(self.menu.volume / 100)
             elif button_clicked == cfg.BACK_BUTTON:
                 self.menu.state_change(cfg.BACK_BUTTON)
 

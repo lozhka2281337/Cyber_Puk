@@ -46,8 +46,7 @@ class MainMenu:
                 return cfg.EXIT_BUTTON
         elif self.state == MenuStates.SETTINGS:
             if self.selected_index == 0:
-                # volume
-                pass
+                return cfg.VOLUME_BUTTON
             elif self.selected_index == 1:
                 return cfg.BACK_BUTTON
 
@@ -78,6 +77,14 @@ class MainMenu:
 
         self.selected_index = self.selected_index % len(self.menu_options)
 
+    def update_volume(self, event) -> str:
+        if event.key in (pygame.K_LEFT, pygame.K_a):
+            self.volume = max(0, self.volume-10)
+        elif event.key in (pygame.K_RIGHT, pygame.K_d):
+            self.volume = min(100, self.volume+10)
+
+        return cfg.VOLUME_BUTTON
+
     def state_change(self, button):
         if button == cfg.BACK_BUTTON:
             self.state = MenuStates.MAIN
@@ -85,6 +92,9 @@ class MainMenu:
             self.state = MenuStates.SETTINGS
 
         self._create_buttons()
+
+    def _get_volume_button(self):
+        return f"{cfg.VOLUME_BUTTON} {self.volume}%"
 
     def _create_buttons(self):
         options = self._get_options()
@@ -132,6 +142,9 @@ class MainMenu:
         for i, opt in enumerate(options):
             is_selected = (i == self.selected_index)
             rect = self.button_rects[i]
+
+            if (opt == cfg.VOLUME_BUTTON):
+                opt = self._get_volume_button()
 
             # Цвета активного/пассивного состояния
             border_color = (25, 35, 45) 

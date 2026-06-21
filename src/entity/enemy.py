@@ -4,6 +4,7 @@ from enum import Enum, auto
 
 from core.pathfinder import PathFinder
 from config import (ENEMY_SIZE, AGRO_DISTANCE, LOSE_AGRO_DISTANCE, WAYPOINT_TOLERANCE)
+from combat.damage import DamageSource, DamageType
 
 SEPARATION_RADIUS_MULTIPLIER = 1.5
 SEPARATION_STRENGTH = 1.5
@@ -36,6 +37,18 @@ class Enemy:
         self.patrol_target = None
         self.patrol_timer = 0.0
         self.path = []
+
+    def _center_vector(self) -> pygame.math.Vector2:
+        return pygame.math.Vector2(self.rect.center)
+
+    def _vector_to(self, target) -> pygame.math.Vector2:
+        return pygame.math.Vector2(target[0] - self.pos.x, target[1] - self.pos.y)
+
+    def _vector_to_player(self, player) -> pygame.math.Vector2:
+        return self._vector_to(player.rect.center)
+
+    def _distance_to_player(self, player) -> float:
+        return self.pos.distance_to(player.pos)
 
     def move(self, walls: list[pygame.Rect], dt: float, direction: pygame.math.Vector2) -> None:
         if direction.magnitude() > 0:
@@ -82,9 +95,19 @@ class Enemy:
         else:
             self.knockback.x, self.knockback.y = 0, 0
 
-    def get_damage(self, damage: int) -> None:
-        self.hp -= damage
-        if self.state in [EnemyState.PATROL, EnemyState.RETURN]:
+    def get_damage(self, damage: int, damage_type=DamageType.GENERIC, source=DamageSource.PLAYER) -> None:
+        actual_damage = self._resolve_damage(damage, damage_type, source)
+        if actual_damage <= 0:
+            return
+
+        self.hp -= actual_damage
+        self._on_damage_taken(damage_type, source)
+
+    def _resolve_damage(self, damage: int, damage_type=DamageType.GENERIC, source=DamageSource.PLAYER) -> int:
+        return damage
+
+    def _on_damage_taken(self, damage_type=DamageType.GENERIC, source=DamageSource.PLAYER) -> None:
+        if self.state in (EnemyState.PATROL, EnemyState.RETURN):
             self.state = EnemyState.CHASE
 
     def check_los(self, target_rect: pygame.Rect, walls: list[pygame.Rect]) -> bool:
@@ -119,8 +142,7 @@ class Enemy:
     def _handle_chase(self, player, world, dt: float) -> pygame.math.Vector2:
         if self.check_los(player.rect, world.walls):
             self.path.clear()
-            return pygame.math.Vector2(player.rect.centerx - self.rect.centerx,
-                                       player.rect.centery - self.rect.centery)
+            return self._vector_to_player(player)
                                        
         elif self.last_known_pos:
             if not self.path:
@@ -187,7 +209,7 @@ class Enemy:
         return current_direction
 
     def _update_state(self, player, world, dt: float) -> None:
-        dist_to_player = self.pos.distance_to(player.pos)
+        dist_to_player = self._distance_to_player(player)
         has_los = self.check_los(player.rect, world.walls)
         is_player_in_room = self.room.colliderect(player.rect)
 

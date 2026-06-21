@@ -6,6 +6,7 @@ from enum import Enum, auto
 from .enemy import Enemy, EnemyState
 from projectile.grenade import Grenade
 from projectile.effects import SparkEffect
+from combat.damage import DamageSource, DamageType
 
 BOSS_SIZE = 64
 BOSS_HP = 500
@@ -107,37 +108,40 @@ class Boss(Enemy):
         self.last_laser_hit_time = -9999.0
         self.last_player_melee_hit_time = -9999.0
 
-    def get_damage(self, damage: int, damage_type="default", source="player") -> None:
+    def _resolve_damage(self, damage: int, damage_type=DamageType.GENERIC, source=DamageSource.PLAYER) -> int:
         if self.is_invulnerable:
-            return
+            return 0
 
-        if damage_type == "grenade":
-            if source == "boss":
-                return
-            self.hp -= BOSS_GRENADE_DAMAGE
-            return
+        if damage_type == DamageType.GRENADE:
+            if source == DamageSource.BOSS:
+                return 0
+            return BOSS_GRENADE_DAMAGE
 
-        if damage_type == "laser":
+        if damage_type == DamageType.LASER:
             now = pygame.time.get_ticks() / 1000.0
             if now - self.last_laser_hit_time < 0.25:
-                return
-            self.last_laser_hit_time = now
-            self.hp -= BOSS_LASER_TICK_DAMAGE
-            return
+                return 0
+            return BOSS_LASER_TICK_DAMAGE
 
-        if damage_type == "melee":
+        if damage_type == DamageType.MELEE:
             now = pygame.time.get_ticks() / 1000.0
             if now - self.last_player_melee_hit_time < 0.25:
-                return
-            self.last_player_melee_hit_time = now
-            self.hp -= BOSS_MELEE_DAMAGE
-            return
+                return 0
+            return BOSS_MELEE_DAMAGE
 
-        if damage_type == "bullet":
-            self.hp -= min(damage, BOSS_BULLET_DAMAGE)
-            return
+        if damage_type == DamageType.BULLET:
+            return min(damage, BOSS_BULLET_DAMAGE)
 
-        self.hp -= damage
+        return damage
+
+    def _on_damage_taken(self, damage_type=DamageType.GENERIC, source=DamageSource.PLAYER) -> None:
+        if damage_type == DamageType.LASER:
+            self.last_laser_hit_time = pygame.time.get_ticks() / 1000.0
+        elif damage_type == DamageType.MELEE:
+            self.last_player_melee_hit_time = pygame.time.get_ticks() / 1000.0
+
+        if self.state in (EnemyState.PATROL, EnemyState.RETURN):
+            self.state = EnemyState.CHASE
 
     def update(self, world, player, dt: float) -> None:
         self._walls = world.walls
@@ -226,10 +230,7 @@ class Boss(Enemy):
         self.move(world.walls, dt, direction)
 
     def _calc_kite_direction(self, player, dist: float) -> pygame.math.Vector2:
-        to_player = pygame.math.Vector2(
-            player.rect.centerx - self.rect.centerx,
-            player.rect.centery - self.rect.centery
-        )
+        to_player = self._vector_to_player(player)
 
         if to_player.magnitude() == 0:
             return pygame.math.Vector2(0, 0)
@@ -295,18 +296,14 @@ class Boss(Enemy):
             self._reset_to_chase()
 
     def _enter_melee(self, player) -> None:
-        dx = player.rect.centerx - self.rect.centerx
-        dy = player.rect.centery - self.rect.centery
-        self.melee_angle = math.degrees(math.atan2(dy, dx))
+        to_player = self._vector_to_player(player)
+        self.melee_angle = math.degrees(math.atan2(to_player.y, to_player.x))
         self.melee_hit_done = False
         self.boss_state = BossState.ATTACK_MELEE
         self.attack_timer = MELEE_DURATION
 
     def _tick_attack_melee(self, world, player, dt: float) -> None:
-        to_p = pygame.math.Vector2(
-            player.rect.centerx - self.rect.centerx,
-            player.rect.centery - self.rect.centery
-        )
+        to_p = self._vector_to_player(player)
         if to_p.magnitude() > 0:
             self.move(world.walls, dt, to_p.normalize() * 0.3)
 
@@ -334,9 +331,7 @@ class Boss(Enemy):
                 player.get_damage(MELEE_DAMAGE)
 
     def _enter_laser_charge(self, player) -> None:
-        dx = player.rect.centerx - self.rect.centerx
-        dy = player.rect.centery - self.rect.centery
-        d = pygame.math.Vector2(dx, dy)
+        d = self._vector_to_player(player)
         self.laser_dir = d.normalize() if d.magnitude() > 0 else pygame.math.Vector2(1, 0)
         self.boss_state = BossState.ATTACK_LASER_CHARGE
         self.attack_timer = LASER_CHARGE_TIME
@@ -384,9 +379,7 @@ class Boss(Enemy):
 
     def _start_dash(self, player) -> None:
         phase_n = self.phase.value
-        dx = player.rect.centerx - self.rect.centerx
-        dy = player.rect.centery - self.rect.centery
-        d = pygame.math.Vector2(dx, dy)
+        d = self._vector_to_player(player)
         direction = d.normalize() if d.magnitude() > 0 else pygame.math.Vector2(1, 0)
         self.dash_velocity = direction * DASH_SPEED[phase_n]
         self.boss_state = BossState.DASH

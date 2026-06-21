@@ -51,8 +51,7 @@ class Shooter(AnimatedEnemy):
         if self.check_los(player.rect, world.walls):
             self.path.clear() 
             
-            vec_to_player = pygame.math.Vector2(player.rect.centerx - self.rect.centerx,
-                                                player.rect.centery - self.rect.centery)
+            vec_to_player = self._vector_to_player(player)
             dist = vec_to_player.magnitude()
             direction = pygame.math.Vector2(0, 0)
 
@@ -73,7 +72,10 @@ class Shooter(AnimatedEnemy):
             self._fire_bullet(player, world.bullets)
 
     def _fire_bullet(self, player, bullets: list) -> None:
-        new_bullet = Bullet(self.rect.centerx, self.rect.centery,
-                            player.rect.centerx, player.rect.centery,
+        start = self._center_vector()
+        target = self._vector_to_player(player)
+
+        new_bullet = Bullet(start.x, start.y,
+                            start.x + target.x, start.y + target.y,
                             SHOOTER_BULLET_SPEED, SHOOTER_BULLET_COLOR, self.damage)
         bullets.append(new_bullet)

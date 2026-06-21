@@ -14,22 +14,20 @@ class Gun(Weapon):
         self.b_range = b_range   
 
     def shot(self, player_pos, camera_x: float, camera_y: float, world) -> None:
-        current_time = pygame.time.get_ticks()
-        if current_time - self.last_shot_time < self.shot_delay:
+        if not self._can_shoot():
             return 
 
-        self.last_shot_time = current_time
+        self._mark_shot()
 
-        mx, my = pygame.mouse.get_pos()
-        target_x, target_y = mx + camera_x, my + camera_y
-        start_x, start_y = player_pos.x + 16, player_pos.y + 16
+        target = self._get_target_world_pos(camera_x, camera_y)
+        start = self._get_player_center(player_pos)
 
         for i in range(self.count):
             angle = 0
             if self.count > 1:
                 angle = (i - (self.count - 1) / 2) * self.spread
 
-            b = Bullet(start_x, start_y, target_x, target_y, 
+            b = Bullet(start.x, start.y, target.x, target.y, 
                        self.b_speed, self.b_color, self.damage, angle, self.b_range, True)
     
             world.bullets.append(b) 

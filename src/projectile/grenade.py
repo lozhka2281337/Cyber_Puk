@@ -2,6 +2,7 @@ import pygame
 
 from .bullet import Bullet
 from .effects import SparkEffect
+from combat.damage import DamageSource, DamageType
 
 
 class Grenade(Bullet):
@@ -67,10 +68,7 @@ class Grenade(Bullet):
                 enemy_pos = pygame.math.Vector2(enemy.rect.center)
 
                 if self.pos.distance_to(enemy_pos) <= self.blast_radius:
-                    try:
-                        enemy.get_damage(self.damage, damage_type="grenade", source="player")
-                    except TypeError:
-                        enemy.get_damage(self.damage)
+                    enemy.get_damage(self.damage, damage_type=DamageType.GRENADE, source=DamageSource.PLAYER)
 
                     push_dir = enemy_pos - self.pos
                     if push_dir.magnitude() > 0:

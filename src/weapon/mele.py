@@ -2,6 +2,7 @@ import pygame
 import math
 
 from .weapon import Weapon
+from combat.damage import DamageSource, DamageType
 
 class Melee(Weapon):
     def __init__(self, name, damage, radius, clip, shot_delay, reach, arc_degrees, color):
@@ -16,22 +17,19 @@ class Melee(Weapon):
         self.hit_enemies = []
 
     def shot(self, player_pos, camera_x: float, camera_y: float, world) -> None:
-        current_time = pygame.time.get_ticks()
-
-        if self.is_swinging or current_time - self.last_shot_time < self.shot_delay:
+        if self.is_swinging or not self._can_shoot():
             return
 
-        self.last_shot_time = current_time
+        self._mark_shot()
         self.is_swinging = True
-        self.swing_timer = current_time + self.swing_duration
+        self.swing_timer = pygame.time.get_ticks() + self.swing_duration
         self.hit_enemies = []
 
-        mx, my = pygame.mouse.get_pos()
-        target_world_x, target_world_y = mx + camera_x, my + camera_y
-        start_center_x, start_center_y = player_pos.x + 16, player_pos.y + 16
+        target_world = self._get_target_world_pos(camera_x, camera_y)
+        start_center = self._get_player_center(player_pos)
 
-        dx = target_world_x - start_center_x
-        dy = target_world_y - start_center_y
+        dx = target_world.x - start_center.x
+        dy = target_world.y - start_center.y
         self.locked_angle = math.degrees(math.atan2(dy, dx))
 
     def update(self):
@@ -57,10 +55,7 @@ class Melee(Weapon):
                     angle_diff = (angle_to_enemy - self.locked_angle + 180) % 360 - 180
 
                     if abs(angle_diff) <= self.arc_degrees / 2:
-                        try:
-                            enemy.get_damage(150, damage_type="melee", source="player")
-                        except TypeError:
-                            enemy.get_damage(150)
+                        enemy.get_damage(150, damage_type=DamageType.MELEE, source=DamageSource.PLAYER)
 
                         push_dir = enemy_pos - start_pos
                         if push_dir.magnitude() > 0:

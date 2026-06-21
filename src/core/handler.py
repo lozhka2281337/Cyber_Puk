@@ -41,6 +41,9 @@ class Handler:
                 if event.key == pygame.K_5:
                     self.player.inventory.set_weapon(4)
 
+                if event.key == pygame.K_b:
+                    game.paused = not game.paused
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 4:
                     self.player.switch_weapon(forward=False)

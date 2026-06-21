@@ -51,8 +51,12 @@ class Game:
             cam_x, cam_y = self.camera.get_offset(self.player.rect)
 
             self.handler.game_process_events(self, self.transition_manager, cam_x, cam_y)
-            self._update(dt)
+            if not self.paused:
+                self._update(dt)
+
             self._draw(cam_x, cam_y)
+            # self._update(dt)
+            # self._draw(cam_x, cam_y)
 
     def run_menu(self):
         self.audio_manager.play_bgm(cfg.MENU_MUSIC)
@@ -123,6 +127,10 @@ class Game:
         self.spawner.spawn_initial()
 
         self.running = True
+        self.paused = False
+
+        self.pause_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
+        self.pause_overlay.fill((0, 0, 0, 180))
 
     def _find_room_by_point(self, x: int, y: int):
         for room in self.world.rooms:
@@ -176,5 +184,12 @@ class Game:
         if self.world.mod == cfg.DARK_MOD: self.dark_renderer.draw(cam_x, cam_y)
         self.world_renderer.draw_interface()
         self.transition_manager.draw_flash()
+
+        if self.paused:
+            self.screen.blit(self.pause_overlay, (0, 0))
+
+            text = cfg.menu_font.render("Пауза (B - Продолжить!)", True, cfg.COLOR_NEON_BLUE)
+            text_rect = text.get_rect(center = (cfg.SCREEN_WIDTH // 2, cfg.SCREEN_HEIGHT // 2))
+            self.screen.blit(text, text_rect)
 
         pygame.display.flip()

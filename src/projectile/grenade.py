@@ -5,7 +5,7 @@ from .effects import SparkEffect
 
 
 class Grenade(Bullet):
-    def __init__(self, x, y, target_x, target_y, speed, color, blast_radius, fuse_time, max_range, owner="player"):
+    def __init__(self, x, y, target_x, target_y, speed, color, blast_radius, fuse_time, max_range, damage=200, owner="player"):
         super().__init__(x, y, target_x, target_y, speed, color, damage=0, max_dist=max_range)
 
         self.blast_radius = blast_radius
@@ -13,6 +13,7 @@ class Grenade(Bullet):
         self.spawn_time = pygame.time.get_ticks()
         self.exploded = False
         self.is_moving = True
+        self.damage = damage
         self.owner = owner
 
         target_pos = pygame.math.Vector2(target_x, target_y)
@@ -62,23 +63,22 @@ class Grenade(Bullet):
 
         camera.add_shake(25)
 
-        if self.owner == "player":
-            for enemy in world.enemies[:]:
-                enemy_pos = pygame.math.Vector2(enemy.rect.center)
+        for enemy in world.enemies[:]:
+            enemy_pos = pygame.math.Vector2(enemy.rect.center)
 
-                if self.pos.distance_to(enemy_pos) <= self.blast_radius:
-                    if hasattr(enemy, "apply_grenade_damage"):
-                        enemy.apply_grenade_damage()
-                    else:
-                        enemy.get_damage(200)
+            if self.pos.distance_to(enemy_pos) <= self.blast_radius:
+                if hasattr(enemy, "apply_grenade_damage"):
+                    enemy.apply_grenade_damage()
+                else:
+                    enemy.get_damage(self.damage)
 
-                    push_dir = enemy_pos - self.pos
-                    if push_dir.magnitude() > 0:
-                        enemy.knockback += push_dir.normalize() * 1500
+                push_dir = enemy_pos - self.pos
+                if push_dir.magnitude() > 0:
+                    enemy.knockback += push_dir.normalize() * 1500
 
-        elif self.owner == "boss":
-            if self.pos.distance_to(player_pos := pygame.math.Vector2(world.player.rect.center)) <= self.blast_radius:
-                world.player.get_damage(2)
+        player_pos = pygame.math.Vector2(world.player.rect.center)
+        if self.pos.distance_to(player_pos) <= self.blast_radius:
+            world.player.get_damage(self.damage)
 
         if self in world.grenades:
             world.grenades.remove(self)

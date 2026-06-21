@@ -45,6 +45,7 @@ LASER_COLOR = {1: (0, 200, 255), 2: (255, 150, 0), 3: (255, 50, 50)}
 BOSS_CONTACT_DAMAGE = 2
 BOSS_BULLET_DAMAGE = 10
 BOSS_GRENADE_DAMAGE = 45
+BOSS_GRENADE_PLAYER_DAMAGE = 2
 BOSS_LASER_TICK_DAMAGE = 8
 BOSS_MELEE_DAMAGE = 90
 BOSS_SELF_GRENADE_IMMUNITY_TIME = 1.0
@@ -107,6 +108,7 @@ class Boss(Enemy):
         self._font_phase = pygame.font.SysFont("Courier New", 14, bold=True)
 
         self.last_grenade_throw_time = -9999.0
+        self.last_grenade_hit_time = -9999.0
         self.last_laser_hit_time = -9999.0
         self.last_player_melee_hit_time = -9999.0
 
@@ -133,8 +135,9 @@ class Boss(Enemy):
         if self.is_invulnerable:
             return
         now = pygame.time.get_ticks() / 1000.0
-        if now - self.last_grenade_throw_time < BOSS_SELF_GRENADE_IMMUNITY_TIME:
+        if now - self.last_grenade_hit_time < BOSS_SELF_GRENADE_IMMUNITY_TIME:
             return
+        self.last_grenade_hit_time = now
         self.hp -= BOSS_GRENADE_DAMAGE
 
     def apply_melee_damage(self) -> None:
@@ -262,12 +265,14 @@ class Boss(Enemy):
         if dist < 130:
             self._enter_melee(player)
         elif dist < 300 and has_los:
-            if random.random() < 0.5:
+            melee_chance = max(0.2, 0.5 - (phase_n - 1) * 0.15)
+            if random.random() < melee_chance:
                 self._enter_melee(player)
             else:
                 self._enter_grenade(world, player)
         elif has_los:
-            if random.random() < 0.6:
+            laser_chance = max(0.3, 0.6 - (phase_n - 1) * 0.15)
+            if random.random() < laser_chance:
                 self._enter_laser_charge(player)
             else:
                 self._enter_grenade(world, player)
@@ -279,7 +284,9 @@ class Boss(Enemy):
             self.rect.centerx, self.rect.centery,
             player.rect.centerx, player.rect.centery,
             GRENADE_SPEED, GRENADE_COLOR,
-            GRENADE_BLAST_R, GRENADE_FUSE, GRENADE_MAX_RANGE
+            GRENADE_BLAST_R, GRENADE_FUSE, GRENADE_MAX_RANGE,
+            damage=BOSS_GRENADE_PLAYER_DAMAGE,
+            owner="boss"
         )
         world.grenades.append(grenade)
         self.last_grenade_throw_time = pygame.time.get_ticks() / 1000.0

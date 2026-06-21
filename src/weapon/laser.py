@@ -2,6 +2,7 @@ import pygame
 import math
 
 from .weapon import Weapon
+from combat.damage import DamageSource, DamageType
 
 class Laser(Weapon):
     def __init__(self, name, damage, radius, clip, shot_delay, duration, beam_width, color, charge_time=400):
@@ -19,18 +20,17 @@ class Laser(Weapon):
     def shot(self, player_pos, camera_x: float, camera_y: float, world) -> None:
         current_time = pygame.time.get_ticks()
 
-        if self.is_firing or self.is_charging or current_time - self.last_shot_time < self.shot_delay:
+        if self.is_firing or self.is_charging or not self._can_shoot():
             return
 
-        self.last_shot_time = current_time
+        self._mark_shot()
 
         self.is_charging = True
         self.active_timer = current_time + self.charge_time
 
-        mx, my = pygame.mouse.get_pos()
-        target_world = (mx + camera_x, my + camera_y)
-        start_center = (player_pos.x + 16, player_pos.y + 16)
-        dir_vec = pygame.math.Vector2(target_world[0] - start_center[0], target_world[1] - start_center[1])
+        target_world = self._get_target_world_pos(camera_x, camera_y)
+        start_center = self._get_player_center(player_pos)
+        dir_vec = target_world - start_center
 
         if dir_vec.magnitude() > 0:
             self.locked_dir = dir_vec.normalize()
@@ -76,10 +76,7 @@ class Laser(Weapon):
 
             for enemy in enemies[:]:
                 if enemy.rect.clipline(start_pos, end_pos):
-                    try:
-                        enemy.get_damage(self.damage, damage_type="laser", source="player")
-                    except TypeError:
-                        enemy.get_damage(self.damage)
+                    enemy.get_damage(self.damage, damage_type=DamageType.LASER, source=DamageSource.PLAYER)
 
                     enemy.knockback += self.locked_dir * 30
 

@@ -13,21 +13,19 @@ class GrenadeLauncher(Weapon):
         self.color = (255, 100, 150)
 
     def shot(self, player_pos, camera_x: float, camera_y: float, world) -> None:
-        current_time = pygame.time.get_ticks()
-        if current_time - self.last_shot_time < self.shot_delay:
+        if not self._can_shoot():
             return
 
-        self.last_shot_time = current_time
+        self._mark_shot()
 
-        mx, my = pygame.mouse.get_pos()
-        target_x, target_y = mx + camera_x, my + camera_y
-        start_x, start_y = player_pos.x + 16, player_pos.y + 16
+        target = self._get_target_world_pos(camera_x, camera_y)
+        start = self._get_player_center(player_pos)
 
         grenade = Grenade(
-            start_x,
-            start_y,
-            target_x,
-            target_y,
+            start.x,
+            start.y,
+            target.x,
+            target.y,
             self.throw_speed,
             self.color,
             self.blast_radius,

@@ -55,8 +55,6 @@ class Game:
                 self._update(dt)
 
             self._draw(cam_x, cam_y)
-            # self._update(dt)
-            # self._draw(cam_x, cam_y)
 
     def run_menu(self):
         self.audio_manager.play_bgm(cfg.MENU_MUSIC)

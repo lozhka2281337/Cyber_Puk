@@ -9,17 +9,16 @@ class PauseMenu(MainMenu):
 
         self.title_text = "ПАУЗА"
 
-        self.menu_options = ["ПРОДОЛЖИТЬ", cfg.SETTINGS_BUTTON, cfg.EXIT_BUTTON]
+        self.menu_options = [cfg.CONTINUE_BUTTON, cfg.SETTINGS_BUTTON, cfg.EXIT_BUTTON]
 
         self._create_buttons()
         self.selected_index = 0
 
 
     def handle_space(self) -> str:
-        """ Переопределяем обработку нажатия Enter/Space для меню паузы """
         if self.state == MenuStates.MAIN:
             if self.selected_index == 0:
-                return "ПРОДОЛЖИТЬ"
+                return cfg.CONTINUE_BUTTON
 
             elif self.selected_index == 1:
                 return cfg.SETTINGS_BUTTON

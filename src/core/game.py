@@ -99,8 +99,10 @@ class Game:
             self._update(dt)
             self._draw(cam_x, cam_y)
 
+
             # Обновляем экран ТОЛЬКО ОДИН РАЗ для обычной игры
             pygame.display.flip()
+
 
     def run_menu(self):
         self.audio_manager.play_bgm(cfg.MENU_MUSIC)

@@ -4,10 +4,14 @@ class AudioManager:
     def __init__(self):
         pygame.mixer.init()
         
-    def play_bgm(self, file_path, loops=-1, volume=0.5):
+    def play_bgm(self, file_path, loops=-1, volume=1):
         pygame.mixer.music.load(file_path)
         pygame.mixer.music.set_volume(volume)
         pygame.mixer.music.play(loops)
+
+    def queue_bgm(self, file_path):
+        pygame.mixer.music.queue(file_path)
+
 
     def set_bgm_volume(self, volume):
         volume = max(0.0, min(1.0, volume)) 

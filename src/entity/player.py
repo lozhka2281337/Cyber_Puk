@@ -22,6 +22,7 @@ class Player:
 
         self.invulnerable_timer = 0 # таймер для щита бессмертия, появляющийся после получения урона
         self.ping_timer = 0
+        self.score = 0
     
     def switch_weapon(self, forward: bool):
         if forward:
@@ -49,6 +50,12 @@ class Player:
         if self.invulnerable_timer <= 0: 
             self.hp -= damage
             self.invulnerable_timer = 3.0
+
+    def up_score(self):
+        self.score += 1
+
+    def healling(self, amount=1):
+        self.hp += amount
 
     def update(self, dt: float, world): 
         keys = pygame.key.get_pressed()

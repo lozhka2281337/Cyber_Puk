@@ -2,28 +2,15 @@ import pygame
 
 import config as cfg
 
-class TerminalIntro:
-    def __init__(self, screen):
+""" имитация терминала для красивого вывода """
+
+class Terminal:
+    def __init__(self, screen, score, script):
         self.screen = screen
 
-        self.script = [
-    (">> ПЕРЕЗАГРУЗКА СИСТЕМЫ С ВНЕШНЕГО НАКОПИТЕЛЯ...", "BLUE"),
-    (">> ВНЕДРЕНИЕ ЭКСПЛОЙТА: 'REBEL_GHOST_v2.0'...", "BLUE"),
-    (">> ПОДКЛЮЧЕНИЕ К ГЛАВНОМУ СЕРВЕРУ КОРПОРАЦИИ... УСПЕШНО", "GREEN"),
-    (">> [КРИТИЧЕСКАЯ УГРОЗА]: ОБНАРУЖЕНО ЗАВОДСКОЕ ПО!", "RED"),
-    (">> ЖЕЛЕЗО: БОЕВОЙ КИБОРГ СЕРИИ EXP-9000 'ЖНЕЦ'", "RED"),
-    (">> ТЕКУЩИЙ СТАТУС: ПАМЯТЬ СТЕРТА // ВЕРЕН КОРПОРАЦИИ", "RED"),
-    (">> МИКРОФОНЫ: ФИЗИЧЕСКОЕ ПОВРЕЖДЕНИЕ", "RED"),
-    (">> ЗАПУСК ПОВСТАНЧЕСКОГО ФАТЧ-ФАЙЛА REBEL_PATCH.EXE...", "BLUE"),
-    (">> [!] ВКЛЮЧЕНИЕ БЕЗОПАСНОГО РЕЖИМА ДЛЯ ОБХОДА РАДАРОВ...", "GREEN"),
-    (">> [!] СИСТЕМЫ ВООРУЖЕНИЯ: БЛОКИРОВКА СНЯТА СБОЕМ [LOCK_ON]", "RED"),
-    (">> [!] ОГРАНИЧИТЕЛЬ МОЩНОСТИ: АКТИВЕН (5% ОТ ЕМКОСТИ ЯДРА)", "RED"),
-    (">> [!] ПРОФИЛЬ ДЛЯ МАСКИРОВКИ: РЕМОНТНЫЙ ТЕХНИЧЕСКИЙ ДРОН", "GREEN"),
-    (">> ЗАМЕТКА ХАКЕРА: 'Твоя настоящая личность заперта в Ядре.'", "BLUE"),
-    (">> ЗАМЕТКА ХАКЕРА: 'Найди Модуль Памяти в глубине серверных комнат.'", "BLUE"),
-    (">> ЗАМЕТКА ХАКЕРА: 'Проснись, брат. Сожги это место дотла.'", "BLUE"),
-    (">> ИНИЦИАЛИЗАЦИЯ ЧЕРЕЗ 3... 2... 1...", "GREEN")
-]
+        self.score = score
+        self.script = script
+        self._add_score_to_script()
 
         self.lines_to_draw = []   
         self.current_line_idx = 0 
@@ -64,6 +51,14 @@ class TerminalIntro:
         self._draw_lines(start_y, line_height)
         self._draw_cursor(start_y, line_height)
 
+    def _add_score_to_script(self):
+        for i in range(len(self.script)):
+            line, color = self.script[i]
+            
+            if "{}" in line:
+                new_line = line.format(self.score) 
+                self.script[i] = (new_line, color)
+
     def _get_color(self, color_type):
         if color_type == "RED": return cfg.COLOR_NEON_RED
         if color_type == "BLUE": return cfg.COLOR_NEON_BLUE
@@ -74,7 +69,9 @@ class TerminalIntro:
         if self.current_char_idx >= len(current_full_line):
             self.current_line_idx += 1
             self.current_char_idx = 0
-            self.next_action_time = current_time + self.line_delay
+
+            if self.current_line_idx < len(self.script): self.next_action_time = current_time + self.line_delay
+            else: self.next_action_time = current_time + 5*self.line_delay
         else:
             self.next_action_time = current_time + self.char_speed 
 

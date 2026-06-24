@@ -90,13 +90,12 @@ class MainMenu:
             self.selected_index += 1
         self.selected_index = self.selected_index % len(options)
 
-    def update_volume(self, event) -> str:
+    def update_volume(self, event):
         if self.state == MenuStates.SETTINGS:
             if event.key in (pygame.K_LEFT, pygame.K_a):
                 self.volume = max(0, self.volume - 10)
             elif event.key in (pygame.K_RIGHT, pygame.K_d):
                 self.volume = min(100, self.volume + 10)
-        return cfg.VOLUME_BUTTON
 
     def state_change(self, button):
         if button == cfg.BACK_BUTTON:

@@ -18,7 +18,7 @@ from core.audio_manager import AudioManager
 
 from menu.main_menu import MainMenu
 from menu.pause_menu import PauseMenu
-from menu.intro import TerminalIntro
+from menu.terminal import Terminal
 
 import config as cfg
 
@@ -36,22 +36,30 @@ class Game:
         self.camera = Camera(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
         self.transition_manager = TransitionManager(self.screen, self.camera)
         self.audio_manager = AudioManager()
-        self.terminal_intro = TerminalIntro(self.screen)
 
         self._new_game()
 
-    def run_intro(self):
-        self.audio_manager.play_bgm(cfg.INTRO_MUSIC)
+    def run_terminal(self, script):
+        self.terminal = Terminal(self.screen, self.player.score, script)
+
+        if script == cfg.SCRIPT_LOSE: 
+            self.audio_manager.play_bgm(cfg.BOOM_SOUND)
+            self.audio_manager.queue_bgm(cfg.INTRO_MUSIC)
+        else:
+            self.audio_manager.play_bgm(cfg.INTRO_MUSIC)
 
         while self.running:
             self.handler.intro_process_events()
 
-            if self.terminal_intro.update(): break
-            self.terminal_intro.draw()
+            if self.terminal.update(): break
+            self.terminal.draw()
 
             pygame.display.flip()
 
-        self.run_game()
+        if script == cfg.SCRIPT_INTRO: 
+            self.run_game()
+        else:
+            self.run_menu()
 
     def run_game(self):
         self.running = True
@@ -131,8 +139,7 @@ class Game:
         self.paused = False
 
     def _death_player(self):
-        self.world_renderer.draw_death_screen()
-        self._new_game()
+        self.run_terminal(cfg.SCRIPT_LOSE)
 
     def _update(self, dt: float):
         self.camera.update(dt)
@@ -153,12 +160,17 @@ class Game:
             ping.update(self.world, self.player, dt)
 
         self.player.process_weapon_damage(self.world.enemies, self.world.walls)
-        self.world.enemies[:] = [enemy for enemy in self.world.enemies if enemy.hp > 0]
+
+        for enemy in self.world.enemies[:]:
+            if enemy.hp > 0: continue
+            
+            self.player.up_score()
+            self.world.enemies.remove(enemy)
 
         for item in self.world.items[:]:
             if self.player.rect.colliderect(item.rect):
                 if self.player.hp < cfg.PLAYER_HP:
-                    self.player.hp += 1
+                    self.player.healling()
                     self.world.items.remove(item)
 
         if self.player.hp <= 0:

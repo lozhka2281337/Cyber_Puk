@@ -40,6 +40,7 @@ class Handler:
                 elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
                     self._process_button_clicked()
                 elif event.key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_d, pygame.K_a):
+                    self.game.menu.update_volume(event)
                     self._process_button_clicked()
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -102,12 +103,12 @@ class Handler:
     def _process_button_clicked(self):
         button_clicked = self.game.menu.handle_space()
         if button_clicked == cfg.START_GAME_BUTTON:
-            self.game.run_intro()
+            self.game.run_terminal(cfg.SCRIPT_INTRO)
         elif button_clicked == cfg.SETTINGS_BUTTON:
             self.game.menu.state_change(cfg.SETTINGS_BUTTON)
         elif button_clicked == cfg.EXIT_BUTTON:
             self.game.running = False
         elif button_clicked == cfg.VOLUME_BUTTON:
-            self.game.audio_manager.set_bgm_volume(self.menu.volume / 100)
+            self.game.audio_manager.set_bgm_volume(self.game.menu.volume / 100)
         elif button_clicked == cfg.BACK_BUTTON:
             self.game.menu.state_change(cfg.BACK_BUTTON)

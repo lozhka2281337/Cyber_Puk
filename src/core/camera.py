@@ -14,7 +14,6 @@ class Camera:
     def update(self, dt):
         self._update_shake(dt)
 
-
     def add_shake(self, amount: float):
         self.shake_intensity = max(self.shake_intensity, amount)
 

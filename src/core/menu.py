@@ -36,6 +36,9 @@ class MainMenu:
         self._draw_title()
         self._draw_buttons()
 
+    def update(self, dt):
+        self.scanline_y = (self.scanline_y + 700 * dt) % (1.2 * self.height)
+
     def handle_event(self, event):
         if event.type == pygame.MOUSEMOTION:
             self.update_selection_by_mouse()
@@ -117,14 +120,13 @@ class MainMenu:
 
     def _draw_grid(self):
         self.screen.fill(cfg.COLOR_BG)
-        
+
         for x in range(0, self.width, 40):
             pygame.draw.line(self.screen, (15, 22, 33), (x, 0), (x, self.height), 1)
         for y in range(0, self.height, 40):
             pygame.draw.line(self.screen, (15, 22, 33), (0, y), (self.width, y), 1)
 
     def _draw_scannig_line(self):
-        self.scanline_y = (self.scanline_y + 7) % (1.2 * self.height)
         pygame.draw.line(self.screen, (18, 32, 50), (0, self.scanline_y), (self.width, self.scanline_y), 1)
 
     def _draw_title(self):

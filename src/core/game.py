@@ -55,21 +55,26 @@ class Game:
         self.audio_manager.play_bgm(cfg.DARK_MUSIC)
 
         while self.running:
-            dt = min(0.05, self.clock.tick(cfg.FPS) / 1000.0)
+            dt = self.get_dt()
             cam_x, cam_y = self.camera.get_offset(self.player.rect)
 
             self.handler.game_process_events(cam_x, cam_y)
-            self._update(dt)
+
+            if not self.paused: self._update(dt)
+            else: self.pause_menu.update(dt)
+
             self._draw(cam_x, cam_y)
 
             pygame.display.flip()
-
 
     def run_menu(self):
         self.audio_manager.play_bgm(cfg.MENU_MUSIC)
 
         while self.running:
+            dt = self.get_dt()
+
             self.handler.menu_process_events()
+            self.menu.update(dt)
             self.menu.draw()
 
             pygame.display.flip()
@@ -92,6 +97,9 @@ class Game:
         boss = Boss(boss_x, boss_y, room)
         self.world.enemies.append(boss)
         self.world.boss_spawned = True
+
+    def get_dt(self):
+        return min(0.05, self.clock.tick(cfg.FPS) / 1000.0)
 
     def _new_game(self):
         self.world = World()

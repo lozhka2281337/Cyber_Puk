@@ -55,7 +55,7 @@ class CyberCore:
         self._draw_pulsating_frame(surface, cam_x, cam_y, pulse)
         self._draw_core_center(surface, cam_x, cam_y, pulse)
 
-    def core_activate(self, world, player) -> bool:
+    def core_activate(self, player) -> bool:
         return self.can_interact(player)
             
     def can_interact(self, player) -> bool:

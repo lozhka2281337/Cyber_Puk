@@ -75,8 +75,9 @@ class Handler:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_e:
                     was_dark = self.game.world.mod == cfg.DARK_MOD
-                    if self.cyber_core.core_activate(self.game.world, self.player):
+                    if self.cyber_core.core_activate(self.player):
                         self.game.set_normal_mod()
+                        self.game.elevator.activate()
 
                     if was_dark and self.game.world.core_activated and not self.game.world.boss_spawned:
                         self.game.spawn_boss_in_start_room()

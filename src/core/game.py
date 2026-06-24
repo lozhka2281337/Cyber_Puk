@@ -3,6 +3,7 @@ import pygame
 from dungeon.BSP.BSP_generation import BSPGeneration as BSP
 from entity.player import Player
 from entity.cyber_core import CyberCore
+from entity.elevator import Elevator
 from entity.boss import Boss
 
 from core.world import World
@@ -11,10 +12,11 @@ from core.transition_manager import TransitionManager
 from core.handler import Handler
 from core.camera import Camera
 from core.spawner import Spawner
-from core.menu import MainMenu
-from core.pause_menu import PauseMenu
 from core.audio_manager import AudioManager
-from core.intro import TerminalIntro
+
+from menu.main_menu import MainMenu
+from menu.pause_menu import PauseMenu
+from menu.intro import TerminalIntro
 
 import config as cfg
 
@@ -48,7 +50,6 @@ class Game:
             pygame.display.flip()
 
         self.run_game()
-
 
     def run_game(self):
         self.running = True
@@ -112,9 +113,10 @@ class Game:
 
         self.cyber_core = CyberCore(core_x, core_y)
         self.player = Player(player_x, player_y)
+        self.elevator = Elevator(player_x, player_y)
         self.world.start_room = self.dungeon_generator.find_room_by_point(player_x, player_y)
 
-        self.world_renderer = WorldRenderer(self.screen, self.world, self.player, self.cyber_core)
+        self.world_renderer = WorldRenderer(self.screen, self.world, self.player, self.elevator, self.cyber_core)
         self.dark_renderer = DarkRenderer(self.screen, self.world, self.player, self.cyber_core)
         self.handler = Handler(self, self.player, self.cyber_core, self.world)
         
@@ -133,6 +135,7 @@ class Game:
         self.camera.update(dt)
         self.transition_manager.update(dt)
         self.player.update(dt, self.world)
+        self.elevator.update()
         self.cyber_core.update(dt)
 
         for bullet in self.world.bullets[:]:

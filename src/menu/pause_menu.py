@@ -1,6 +1,6 @@
 import pygame
 import config as cfg
-from core.menu import MainMenu, MenuStates
+from menu.main_menu import MainMenu, MenuStates
 
 
 class PauseMenu(MainMenu):

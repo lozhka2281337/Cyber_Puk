@@ -4,38 +4,33 @@ import config as cfg
 
 
 class WorldRenderer:
-    def __init__(self, screen, world, player, cyber_core):
+    def __init__(self, screen, world, player, elevator, cyber_core):
         self.screen = screen
         self.player = player
+        self.elevator = elevator
         self.cyber_core = cyber_core
 
         self.world = world
 
         self.map_surface = pygame.Surface((cfg.MAP_WIDTH * cfg.TILE_SIZE, cfg.MAP_HEIGHT * cfg.TILE_SIZE), pygame.SRCALPHA)
 
-        #Загружаем спрайт для пола
         floor_lvl1 = pygame.image.load("assets/FloorLvl1.png").convert_alpha()
         self.floor_lvl1 = pygame.transform.scale(floor_lvl1, (cfg.TILE_SIZE, cfg.TILE_SIZE))
 
-        #Загружаем спрайт для стен
         wall_lvl1 = pygame.image.load("assets/WallLvl1.png").convert_alpha()
         self.wall_lvl1 = pygame.transform.scale(wall_lvl1, (cfg.TILE_SIZE, cfg.TILE_SIZE))
 
-        # Загружаем спрайт для отображения HP
         self.hp_sprite = pygame.image.load("assets/Hp.png").convert_alpha()
         self.hp_width = self.hp_sprite.get_width()
 
-        self._init_map_surface()
+        self.init_map_surface()
 
     def draw_world(self, cam_x, cam_y):
-        """ карта """
         self.screen.fill(cfg.FLOOR_COLOR)
         self.screen.blit(self.map_surface, (-cam_x, -cam_y))
 
-        """ атака оружия игрока """
         self._draw_weapon(cam_x, cam_y)
 
-        """ ентити """
         for item in self.world.items:
             item.draw(self.screen, cam_x, cam_y)
 
@@ -45,6 +40,7 @@ class WorldRenderer:
         for grenade in self.world.grenades:
             grenade.draw(self.screen, cam_x, cam_y)
 
+        self.elevator.draw(self.screen, cam_x, cam_y)
         self.cyber_core.draw(self.screen, cam_x, cam_y)
         self.player.draw(self.screen, cam_x, cam_y)
 
@@ -68,20 +64,16 @@ class WorldRenderer:
 
         pygame.time.wait(3000)
 
-
-    def _init_map_surface(self):
+    def init_map_surface(self):
         for y in range(cfg.MAP_HEIGHT):
             for x in range(cfg.MAP_WIDTH):
                 if self.world.matrix[y][x] == 0:
                     self.map_surface.blit(self.floor_lvl1, (x * cfg.TILE_SIZE, y * cfg.TILE_SIZE))
 
-        """ стены """
         for wall in self.world.walls:
             self.map_surface.blit(self.wall_lvl1, (wall.x, wall.y))
 
-
     def _draw_hp(self):
-        """Рисуем столько спрайтов HP, сколько здоровья у игрока"""
         margin_x = 10  
         margin_y = 10 
         spacing = 5  
@@ -112,7 +104,6 @@ class WorldRenderer:
                 text = f"{i + 1}. {weapon.name}"
                 color = cfg.COLOR_NEON_BLUE
 
-            #рендерим текст и выравниваем по правому углу
             text_surf = cfg.arial_font.render(text, True, color)
             x = start_x - text_surf.get_width()
 

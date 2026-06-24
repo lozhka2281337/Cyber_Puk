@@ -18,3 +18,14 @@ class World:
         self.start_room = None
 
         self.matrix = []
+
+    def clear_map(self):
+        self.matrix.clear()
+        self.enemies.clear()
+        self.bullets.clear()
+        self.grenades.clear()
+        self.effects.clear()
+        self.walls.clear()
+        self.items.clear()
+        self.pings.clear()
+        self.rooms.clear()

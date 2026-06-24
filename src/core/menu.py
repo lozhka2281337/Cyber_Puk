@@ -31,7 +31,6 @@ class MainMenu:
         self.volume = 100
 
     def draw(self):
-        self.screen.fill(cfg.COLOR_BG)
         self._draw_grid()
         self._draw_scannig_line()
         self._draw_title()
@@ -117,6 +116,8 @@ class MainMenu:
             self.button_rects.append(rect)
 
     def _draw_grid(self):
+        self.screen.fill(cfg.COLOR_BG)
+        
         for x in range(0, self.width, 40):
             pygame.draw.line(self.screen, (15, 22, 33), (x, 0), (x, self.height), 1)
         for y in range(0, self.height, 40):

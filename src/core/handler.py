@@ -8,8 +8,8 @@ class Handler:
         self.player = player
         self.cyber_core = cyber_core
 
-    def intro_process_events(self, events):
-        for event in events:
+    def intro_process_events(self, ):
+        for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit(0)
@@ -18,16 +18,16 @@ class Handler:
                 if event.key == pygame.K_ESCAPE:
                     self.game.running = False
 
-    def game_process_events(self, transition_manager, camera_x: float, camera_y: float):
+    def game_process_events(self, camera_x: float, camera_y: float):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.game.running = False
 
             if self.game.paused: self._process_pause_event(event)
-            else: self._process_event(event, transition_manager, camera_x, camera_y)
+            else: self._process_event(event, camera_x, camera_y)
 
-    def menu_process_events(self, events) -> str | None:
-        for event in events:
+    def menu_process_events(self, ):
+        for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.game.running = False
 
@@ -38,16 +38,14 @@ class Handler:
                 if event.key in (pygame.K_UP, pygame.K_w, pygame.K_DOWN, pygame.K_s):
                     self.game.menu.update_selection_by_keyboard(event)
                 elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                    return self.game.menu.handle_space()
+                    self._process_button_clicked()
                 elif event.key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_d, pygame.K_a):
-                    return self.game.menu.update_volume(event)
+                    self._process_button_clicked()
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-               return self.game.menu.handle_left_mouse_button()
-
-        return None
+               self._process_button_clicked()
     
-    def _process_event(self, event, transition_manager, camera_x, camera_y):
+    def _process_event(self, event, camera_x, camera_y):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.game.paused = not self.game.paused
@@ -82,7 +80,7 @@ class Handler:
 
                     if was_dark and self.game.world.core_activated and not self.game.world.boss_spawned:
                         self.game.spawn_boss_in_start_room()
-                        transition_manager.trigger_transition()
+                        self.game.transition_manager.trigger_transition()
 
     def _process_pause_event(self, event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -99,3 +97,16 @@ class Handler:
             self.game.pause_menu.state_change(cfg.BACK_BUTTON)
         elif button == cfg.EXIT_BUTTON:
             self.game.running = False
+
+    def _process_button_clicked(self):
+        button_clicked = self.game.menu.handle_space()
+        if button_clicked == cfg.START_GAME_BUTTON:
+            self.game.run_intro()
+        elif button_clicked == cfg.SETTINGS_BUTTON:
+            self.game.menu.state_change(cfg.SETTINGS_BUTTON)
+        elif button_clicked == cfg.EXIT_BUTTON:
+            self.game.running = False
+        elif button_clicked == cfg.VOLUME_BUTTON:
+            self.game.audio_manager.set_bgm_volume(self.menu.volume / 100)
+        elif button_clicked == cfg.BACK_BUTTON:
+            self.game.menu.state_change(cfg.BACK_BUTTON)

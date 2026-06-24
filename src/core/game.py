@@ -28,33 +28,37 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.menu = MainMenu(self.screen)
+        self.pause_menu = PauseMenu(self.screen)
+        self.camera = Camera(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
+        self.transition_manager = TransitionManager(self.screen, self.camera)
+        self.audio_manager = AudioManager()
+        self.terminal_intro = TerminalIntro(self.screen)
+
         self._new_game()
 
     def run_intro(self):
         self.audio_manager.play_bgm(cfg.INTRO_MUSIC)
 
         while self.running:
-            events = pygame.event.get()
-            self.handler.intro_process_events(events)
+            self.handler.intro_process_events()
 
-            if self.terminal_intro.update():
-                break
-
+            if self.terminal_intro.update(): break
             self.terminal_intro.draw()
 
-        self.world.mod = cfg.DARK_MOD
-        self.running = True
+            pygame.display.flip()
+
         self.run_game()
 
 
     def run_game(self):
+        self.running = True
         self.audio_manager.play_bgm(cfg.DARK_MUSIC)
 
         while self.running:
             dt = min(0.05, self.clock.tick(cfg.FPS) / 1000.0)
             cam_x, cam_y = self.camera.get_offset(self.player.rect)
 
-            self.handler.game_process_events(self.transition_manager, cam_x, cam_y)
+            self.handler.game_process_events(cam_x, cam_y)
             self._update(dt)
             self._draw(cam_x, cam_y)
 
@@ -65,24 +69,9 @@ class Game:
         self.audio_manager.play_bgm(cfg.MENU_MUSIC)
 
         while self.running:
-            events = pygame.event.get()
-            button_clicked = self.handler.menu_process_events(events)
-
-            if button_clicked == cfg.START_GAME_BUTTON:
-                self.run_intro()
-                return
-            elif button_clicked == cfg.SETTINGS_BUTTON:
-                self.menu.state_change(cfg.SETTINGS_BUTTON)
-            elif button_clicked == cfg.EXIT_BUTTON:
-                pygame.quit()
-                return
-            elif button_clicked == cfg.VOLUME_BUTTON:
-                self.audio_manager.set_bgm_volume(self.menu.volume / 100)
-            elif button_clicked == cfg.BACK_BUTTON:
-                self.menu.state_change(cfg.BACK_BUTTON)
-
-            dt = min(0.05, self.clock.tick(cfg.FPS) / 1000.0)
+            self.handler.menu_process_events()
             self.menu.draw()
+
             pygame.display.flip()
 
     def set_normal_mod(self):
@@ -107,6 +96,7 @@ class Game:
     def _new_game(self):
         self.world = World()
         self.dungeon_generator = BSP(self.world)
+        
         self.dungeon_generator.generate_dungeon()
 
         player_x, player_y = self.dungeon_generator.get_start_coord()
@@ -114,27 +104,18 @@ class Game:
 
         self.cyber_core = CyberCore(core_x, core_y)
         self.player = Player(player_x, player_y)
-        self.world.player = self.player
         self.world.start_room = self.dungeon_generator.find_room_by_point(player_x, player_y)
 
-        self.terminal_intro = TerminalIntro(self.screen)
         self.world_renderer = WorldRenderer(self.screen, self.world, self.player, self.cyber_core)
         self.dark_renderer = DarkRenderer(self.screen, self.world, self.player, self.cyber_core)
         self.handler = Handler(self, self.player, self.cyber_core, self.world)
-        self.camera = Camera(cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT)
-        self.transition_manager = TransitionManager(self.screen, self.camera)
-        self.audio_manager = AudioManager()
+        
         self.spawner = Spawner(self.world, self.dungeon_generator, self.player)
 
         self.spawner.spawn_initial()
 
         self.running = True
         self.paused = False
-
-        self.pause_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
-        self.pause_overlay.fill((0, 0, 0, 180))
-
-        self.pause_menu = PauseMenu(self.screen)
 
     def _death_player(self):
         self.world_renderer.draw_death_screen()
@@ -149,7 +130,7 @@ class Game:
         for bullet in self.world.bullets[:]:
             bullet.update(self.world, self.player, dt)
         for grenade in self.world.grenades[:]:
-            grenade.update(self.world, self.camera, dt)
+            grenade.update(self.world, self.player, self.camera, dt)
         for effect in self.world.effects[:]:
             effect.update(self.world.effects, dt)
         for enemy in self.world.enemies[:]:
@@ -178,8 +159,8 @@ class Game:
         if self.world.mod == cfg.DARK_MOD:
             self.dark_renderer.draw(cam_x, cam_y)
         self.world_renderer.draw_interface()
-        self.transition_manager.draw_flash()
+        self.transition_manager.draw_flash() # отрисовка ослепления при переходе на активный режим
 
         if self.paused:
-            self.screen.blit(self.pause_overlay, (0, 0))
+            self.screen.blit(self.pause_menu.pause_overlay, (0, 0))
             self.pause_menu.draw()

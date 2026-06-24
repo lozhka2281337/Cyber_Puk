@@ -64,8 +64,6 @@ class TerminalIntro:
         self._draw_lines(start_y, line_height)
         self._draw_cursor(start_y, line_height)
 
-        pygame.display.flip()
-
     def _get_color(self, color_type):
         if color_type == "RED": return cfg.COLOR_NEON_RED
         if color_type == "BLUE": return cfg.COLOR_NEON_BLUE

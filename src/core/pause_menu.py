@@ -13,7 +13,9 @@ class PauseMenu(MainMenu):
 
         self._create_buttons()
         self.selected_index = 0
-
+        
+        self.pause_overlay = pygame.Surface((cfg.SCREEN_WIDTH, cfg.SCREEN_HEIGHT), pygame.SRCALPHA)
+        self.pause_overlay.fill((0, 0, 0, 180))
 
     def handle_space(self) -> str:
         if self.state == MenuStates.MAIN:

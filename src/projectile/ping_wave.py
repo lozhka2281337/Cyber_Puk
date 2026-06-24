@@ -21,7 +21,6 @@ class PingWave:
 
         # Проверяем, задела ли волна врагов
         for enemy in world.enemies:
-            # Считаем расстояние от центра волны до центра врага
             dx = enemy.rect.centerx - self.x
             dy = enemy.rect.centery - self.y
             distance = math.hypot(dx, dy)

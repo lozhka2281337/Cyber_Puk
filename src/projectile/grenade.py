@@ -20,13 +20,13 @@ class Grenade(Bullet):
         dist_to_target = self.start_pos.distance_to(target_pos)
         self.target_dist = min(dist_to_target, max_range)
 
-    def update(self, world, camera, dt):
+    def update(self, world, player, camera, dt):
         if self.is_moving:
             self._movenment(world, dt)
 
         current_time = pygame.time.get_ticks()
         if current_time - self.spawn_time >= self.fuse_time:
-            self._grenade_is_boom(world, camera)
+            self._grenade_is_boom(world, player, camera)
 
     def draw(self, surface, cam_x, cam_y):
         offset_rect = self.rect.move(-cam_x, -cam_y)
@@ -57,7 +57,7 @@ class Grenade(Bullet):
 
         pygame.draw.ellipse(surface, grenade_body_color, offset_rect)
 
-    def _grenade_is_boom(self, world, camera):
+    def _grenade_is_boom(self, world, player, camera):
         for _ in range(5):
             world.effects.append(SparkEffect(self.rect.centerx, self.rect.centery, (255, 100, 50)))
 
@@ -75,9 +75,9 @@ class Grenade(Bullet):
                         enemy.knockback += push_dir.normalize() * 1500
 
         elif self.owner == "boss":
-            player_pos = pygame.math.Vector2(world.player.rect.center)
+            player_pos = pygame.math.Vector2(player.rect.center)
             if self.pos.distance_to(player_pos) <= self.blast_radius:
-                world.player.get_damage(self.damage)
+                player.get_damage(self.damage)
 
         if self in world.grenades:
             world.grenades.remove(self)

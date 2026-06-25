@@ -144,7 +144,7 @@ class Boss(Enemy):
         self._draw_hp_bar(surface, offset, color)
 
         label = self._font_phase.render(f"ROOT-KIT [P{phase_n}]", True, color)
-        surface.blit(label, (offset.centerx - label.get_width() // 2, offset.top - 24))
+        surface.blit(label, (offset.centerx - label.get_width() // 2, offset.top - 50))
 
         if self.boss_state == BossState.ATTACK_MELEE:
             self._draw_melee_arc(surface, offset)
@@ -422,7 +422,7 @@ class Boss(Enemy):
         bar_w = offset_rect.width
         bar_h = 8
         bar_x = offset_rect.x
-        bar_y = offset_rect.bottom + 4
+        bar_y = offset_rect.bottom + 50
         fill_w = int(bar_w * max(0, self.hp / self.max_hp))
 
         pygame.draw.rect(surface, (40, 10, 10), (bar_x, bar_y, bar_w, bar_h))

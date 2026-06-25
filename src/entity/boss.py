@@ -3,12 +3,14 @@ import random
 import math
 from enum import Enum, auto
 
+from core.animation import Animation
 from .enemy import Enemy, EnemyState
 from projectile.grenade import Grenade
 from projectile.effects import SparkEffect
 from combat.damage import DamageSource, DamageType
 from config import (
-    BOSS_SIZE, BOSS_HP, BOSS_SPEED, BOSS_COLOR, BOSS_CONTACT_DAMAGE,
+    BOSS_SIZE, BOSS_SPRITE_SCALE, BOSS_SPRITE_OFFSET_X, BOSS_SPRITE_OFFSET_Y, BOSS_ANIMATION_SPEED,
+    BOSS_HP, BOSS_SPEED, BOSS_COLOR, BOSS_CONTACT_DAMAGE,
     BOSS_BULLET_DAMAGE, BOSS_GRENADE_DAMAGE, BOSS_LASER_TICK_DAMAGE, BOSS_MELEE_DAMAGE,
     BOSS_PHASE2_HP_RATIO, BOSS_PHASE3_HP_RATIO,
     BOSS_ATTACK_COOLDOWN, BOSS_DASH_COOLDOWN, BOSS_DASH_SPEED, BOSS_DASH_DURATION,
@@ -43,6 +45,8 @@ class Boss(Enemy):
         super().__init__(x, y, BOSS_HP, BOSS_SPEED, BOSS_COLOR, room)
         self.rect = pygame.Rect(x, y, BOSS_SIZE, BOSS_SIZE)
         self.pos = pygame.math.Vector2(x, y)
+        self.anim_run = Animation("assets/boss-run-leftpng.png", columns=6, speed=BOSS_ANIMATION_SPEED, scale=BOSS_SPRITE_SCALE)
+        self.flip_x = False
 
         self.max_hp = BOSS_HP
         self.damage = BOSS_CONTACT_DAMAGE
@@ -121,6 +125,16 @@ class Boss(Enemy):
         self._tick_boss_fsm(world, player, dt)
         self._decay_knockback(dt)
 
+        if player.rect.centerx > self.rect.centerx:
+            self.flip_x = True
+        elif player.rect.centerx < self.rect.centerx:
+            self.flip_x = False
+
+        if self.is_moving:
+            self.anim_run.update(dt)
+        else:
+            self.anim_run.current_idx = 0
+
     def draw(self, surface: pygame.Surface, cam_x: float, cam_y: float) -> None:
         self._cam_x = cam_x
         self._cam_y = cam_y
@@ -129,9 +143,13 @@ class Boss(Enemy):
         color = BOSS_PHASE_COLOR[phase_n]
         offset = self.rect.move(-cam_x, -cam_y)
 
-        inner = tuple(max(0, c // 3) for c in color)
-        pygame.draw.rect(surface, inner, offset)
-        pygame.draw.rect(surface, color, offset, 3)
+        frame = self.anim_run.get_frame(self.flip_x)
+        frame_rect = frame.get_rect(center=offset.center)
+        frame_rect.x += BOSS_SPRITE_OFFSET_X
+        frame_rect.y += BOSS_SPRITE_OFFSET_Y
+        surface.blit(frame, frame_rect)
+
+        pygame.draw.rect(surface, color, offset, 2)
 
         self._draw_corner_brackets(surface, offset, color)
 
